@@ -1,4 +1,4 @@
 MAIN=Preset_Editor_dw2
 MEMORY=256
 VERSION=recommended
-DISPLAY_NAME=Preset Editor DW2
+DISPLAY_NAME=index.html
