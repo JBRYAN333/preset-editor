@@ -6,7 +6,6 @@
 <title>DW2 Preset Editor — by Nixagorn</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -37,680 +36,486 @@ textarea { font-family: 'JetBrains Mono', monospace; }
 </head>
 <body>
 <div id="root"></div>
-<script type="text/babel">
-const { useState, useMemo, useCallback } = React;
-
-/* ═══════════════════════════════════════════════════
-   ITEM DATABASE
-   ═══════════════════════════════════════════════════ */
-const ITEMS = {
-  tops:     { name:"Tops",       icon:"👕", items:[{name:"Bandage"},{name:"Blazer"},{name:"Cape"},{name:"DressShirt"},{name:"DressShirtTucked"},{name:"FlannelShirt"},{name:"Hoodie"},{name:"MA-1"},{name:"Murica"},{name:"NoYankee"},{name:"Polo"},{name:"RaglanShirt"},{name:"SailorShirt"},{name:"SailorShirtTie"},{name:"SantaCoat"},{name:"Shirt"},{name:"ShortSleeve"},{name:"ShortSleeveFlannel"},{name:"StripedSweater"},{name:"Sweatshirt"},{name:"T-Shirt"},{name:"TrackTop"},{name:"Trench"},{name:"Turtleneck"},{name:"SingletTop"},{name:"ElfTop"}]},
-  bottoms:  { name:"Bottoms",    icon:"👖", items:[{name:"Boxing shorts"},{name:"Chinos"},{name:"DressPants"},{name:"ElfPants"},{name:"Joggers"},{name:"PleatedSkirt"},{name:"Shorts"},{name:"SantaPants"},{name:"Skinny"},{name:"SkinnyBeige"},{name:"SkinnyBlack"},{name:"SkinnyLight"},{name:"SkinnyWhite"},{name:"TracksuitPants"},{name:"SingletBottom"}]},
-  shoes:    { name:"Footwear",   icon:"👟", items:[{name:"AirForce1"},{name:"Boots"},{name:"Chelsea"},{name:"Gumshoes"},{name:"LowTopSneakers"},{name:"RubberSandals"},{name:"Slides"},{name:"Slip-ons"},{name:"Sneakers"}]},
-  headwear: { name:"Headwear",   icon:"🎩", items:[{name:"Balaclava"},{name:"Bandana"},{name:"Beanie"},{name:"Beret"},{name:"BoxingHelmet"},{name:"BucketHat"},{name:"BunnyEars"},{name:"Cap"},{name:"Chin Strap"},{name:"DuckEyes"},{name:"ElfHat"},{name:"Eyepatch"},{name:"FlatCap"},{name:"HardHat"},{name:"Hat"},{name:"Headband"},{name:"HeartGlasses"},{name:"HockeyMask"},{name:"Mohawk"},{name:"MouthFaceMask"},{name:"PirateHat"},{name:"PixelatedShades"},{name:"PlayerHeadphones"},{name:"PorkPie"},{name:"PropellerCap"},{name:"PumpkinHead"},{name:"RectangleGlasses"},{name:"RoundGlasses"},{name:"SantaHat"},{name:"Snapback"},{name:"SnapbackFlat"},{name:"SpikyHair"},{name:"TurkeyHat"},{name:"VikingHelmet"},{name:"WitchHat"}]},
-  accessories:{ name:"Accessories",icon:"💎", items:[{name:"BakedTurkey"},{name:"BirthdayCake"},{name:"Cassette"},{name:"CassettePlayer"},{name:"Ducko"},{name:"Goatee"},{name:"GoldenChain"},{name:"Mushache"},{name:"SantaBeard"},{name:"Shroom"},{name:"SilverChain"},{name:"StripedTie"},{name:"Tie"}]},
-  trails:   { name:"Trails",     icon:"✨", items:[{name:"Wood Trail"},{name:"Stone Trail"},{name:"Iron Trail"},{name:"Bronze Trail"},{name:"Silver Trail"},{name:"Gold Trail"},{name:"Platinum Trail"},{name:"Diamond Trail"},{name:"Champion Trail"},{name:"ElectricHands"},{name:"Fire"},{name:"Floating Hearts"},{name:"MenacingEffect"},{name:"Snowflakes"},{name:"VampireAura"}]},
-  wrestlers:{ name:"Wrestlers",  icon:"🤼", items:[{name:"Alex"},{name:"Bill"},{name:"Daniel"},{name:"Hannes"},{name:"Isaac"},{name:"James"},{name:"John"},{name:"Joseph"},{name:"Kurt's"},{name:"Lucy"},{name:"Peter"},{name:"Robbie"},{name:"SkutteOleg2016"},{name:"Waddle"},{name:"Will"}]},
-};
-
-const SKIN_TYPES = {
-  normal: { label: "Normal",  tv: "hmm" },
-  bot:    { label: "Bot",     tv: "This is clearly a bot" },
-  shiny:  { label: "Shiny",   tv: "Shiny boi" },
-};
-
-const EFFECTS = [
-  {n:"None",   v:[0,0,0,1]},     {n:"Shadow",  v:[-3,-3,-3,1]},
-  {n:"Black",  v:[-6,-6,-6,1]},  {n:"Eyes",    v:[-4,-4,-4,1]},
-  {n:"Neon",   v:[1.778e7,1.778e7,-1.778e7,-1]}, {n:"∞", v:[Infinity,Infinity,Infinity,1]},
-  {n:"Red",    v:[-2,0,0,1]},    {n:"Green",   v:[0,-2,0,1]},
-  {n:"Blue",   v:[0,0,-2,1]},    {n:"Pink",    v:[-2,0,-2,1]},
-  {n:"Cyan",   v:[0,-2,-2,1]},   {n:"Yellow",  v:[-2,-2,0,1]},
-];
-
-const COLOR_WHEEL = [
-  { name:"Red",         rgb:[1,0,0]   }, { name:"Red-Orng",   rgb:[1,0.5,0] },
-  { name:"Yellow",      rgb:[1,1,0]   }, { name:"Yel-Green",  rgb:[0.5,1,0] },
-  { name:"Green",       rgb:[0,1,0]   }, { name:"Grn-Cyan",   rgb:[0,1,0.5] },
-  { name:"Cyan",        rgb:[0,1,1]   }, { name:"Cyn-Blue",   rgb:[0,0.5,1] },
-  { name:"Blue",        rgb:[0,0,1]   }, { name:"Blu-Pink",   rgb:[0.5,0,1] },
-  { name:"Pink",        rgb:[1,0,1]   }, { name:"Pink-Red",   rgb:[1,0,0.5] },
-];
-
-/* ═══════════════════════════════════════════════════
-   MAP DATABASE
-   ═══════════════════════════════════════════════════ */
-const MAPS = [
-  {id:"streets", name:"Streets",      cat:"streets", color:"#f59e0b", desc:"DayNight cycle, dayC×0.5"},
-  {id:"basket",  name:"Basketball",   cat:"others",  color:"#3b82f6", desc:"HDR ambient, offset +2.0"},
-  {id:"bouncy",  name:"Bouncy World", cat:"others",  color:"#10b981", desc:"HDR ambient, offset +2.0"},
-  {id:"pole",    name:"Pole V2",      cat:"others",  color:"#6366f1", desc:"HDR ambient, offset +2.0"},
-  {id:"pub",     name:"The Pub",      cat:"others",  color:"#ec4899", desc:"HDR ambient, offset +2.0"},
-  {id:"cage",    name:"Cage",         cat:"cage",    color:"#8b5cf6", desc:"Extreme HDR (1e37+, log10)"},
-];
-
-/* ═══════════════════════════════════════════════════
-   CONVERSION ENGINE
-   ═══════════════════════════════════════════════════ */
-const STREETS_OTHERS_OFFSET = 2.0;
-const CAGE_LOG_CENTER = 37.5;
-const CAGE_LOG_SCALE  = 2.0;
-
-function cageChannelToStreets(v) {
-  if (v === 0) return 0;
-  if (!isFinite(v)) return v > 0 ? 1 : -1;
-  const sign = v < 0 ? -1 : 1;
-  const absV = Math.abs(v);
-  if (absV < 1) return v;
-  return sign * (Math.log10(absV) - CAGE_LOG_CENTER) / CAGE_LOG_SCALE;
-}
-function streetsChannelToCage(v) {
-  if (v === 0) return 0;
-  if (!isFinite(v)) return v;
-  const sign = v < 0 ? -1 : 1;
-  return sign * Math.pow(10, Math.abs(v) * CAGE_LOG_SCALE + CAGE_LOG_CENTER);
-}
-function toStreetsSpace(c, fromCat) {
-  if (fromCat === "streets") return [...c];
-  if (fromCat === "others")  return [c[0]+STREETS_OTHERS_OFFSET, c[1]+STREETS_OTHERS_OFFSET, c[2]+STREETS_OTHERS_OFFSET, c[3]];
-  if (fromCat === "cage")    return [cageChannelToStreets(c[0]), cageChannelToStreets(c[1]), cageChannelToStreets(c[2]), c[3]];
-  return [...c];
-}
-function fromStreetsSpace(c, toCat) {
-  if (toCat === "streets") return [...c];
-  if (toCat === "others")  return [c[0]-STREETS_OTHERS_OFFSET, c[1]-STREETS_OTHERS_OFFSET, c[2]-STREETS_OTHERS_OFFSET, c[3]];
-  if (toCat === "cage")    return [streetsChannelToCage(c[0]), streetsChannelToCage(c[1]), streetsChannelToCage(c[2]), c[3]];
-  return [...c];
-}
-function convertColor(c, fromCat, toCat) {
-  if (fromCat === toCat) return [...c];
-  return fromStreetsSpace(toStreetsSpace(c, fromCat), toCat);
-}
-
-/* ═══════════════════════════════════════════════════
-   PRESET FORMAT
-   ═══════════════════════════════════════════════════ */
-const fmtC = c => c.map(v => v===Infinity?"Infinity":v===-Infinity?"-Infinity":String(v)).join(",");
-const c01  = v => Math.max(0, Math.min(1, Math.abs(v)));
-const toRgb = (r,g,b,a=1) => "rgba("+Math.round(c01(r)*255)+","+Math.round(c01(g)*255)+","+Math.round(c01(b)*255)+","+c01(a)+")";
-
-function parseP(s) {
-  try {
-    const [cp, ip] = s.split("[divEnd]");
-    const g = cp.split("[gEnd]");
-    const p = x => x.split(",").map(v => v.trim()==="Infinity"?Infinity:v.trim()==="-Infinity"?-Infinity:parseFloat(v));
-    return {
-      st: g[0]||"hmm",
-      sk: g[1]?p(g[1]):[.8,.7,.5,1],
-      pr: g[2]?p(g[2]):[0,0,0,1],
-      se: g[3]?p(g[3]):[0,0,0,1],
-      bl: g[4]?p(g[4]):[.909,0,0,1],
-      it: ip ? ip.split("[itemEnd]").map(x=>x.trim()).filter(x=>x&&!isNaN(x)) : []
+<script>
+(() => {
+  const { useState, useMemo, useCallback } = React;
+  const ITEMS = {
+    tops: { name: "Tops", icon: "\u{1F455}", items: [{ name: "Bandage" }, { name: "Blazer" }, { name: "Cape" }, { name: "DressShirt" }, { name: "DressShirtTucked" }, { name: "FlannelShirt" }, { name: "Hoodie" }, { name: "MA-1" }, { name: "Murica" }, { name: "NoYankee" }, { name: "Polo" }, { name: "RaglanShirt" }, { name: "SailorShirt" }, { name: "SailorShirtTie" }, { name: "SantaCoat" }, { name: "Shirt" }, { name: "ShortSleeve" }, { name: "ShortSleeveFlannel" }, { name: "StripedSweater" }, { name: "Sweatshirt" }, { name: "T-Shirt" }, { name: "TrackTop" }, { name: "Trench" }, { name: "Turtleneck" }, { name: "SingletTop" }, { name: "ElfTop" }] },
+    bottoms: { name: "Bottoms", icon: "\u{1F456}", items: [{ name: "Boxing shorts" }, { name: "Chinos" }, { name: "DressPants" }, { name: "ElfPants" }, { name: "Joggers" }, { name: "PleatedSkirt" }, { name: "Shorts" }, { name: "SantaPants" }, { name: "Skinny" }, { name: "SkinnyBeige" }, { name: "SkinnyBlack" }, { name: "SkinnyLight" }, { name: "SkinnyWhite" }, { name: "TracksuitPants" }, { name: "SingletBottom" }] },
+    shoes: { name: "Footwear", icon: "\u{1F45F}", items: [{ name: "AirForce1" }, { name: "Boots" }, { name: "Chelsea" }, { name: "Gumshoes" }, { name: "LowTopSneakers" }, { name: "RubberSandals" }, { name: "Slides" }, { name: "Slip-ons" }, { name: "Sneakers" }] },
+    headwear: { name: "Headwear", icon: "\u{1F3A9}", items: [{ name: "Balaclava" }, { name: "Bandana" }, { name: "Beanie" }, { name: "Beret" }, { name: "BoxingHelmet" }, { name: "BucketHat" }, { name: "BunnyEars" }, { name: "Cap" }, { name: "Chin Strap" }, { name: "DuckEyes" }, { name: "ElfHat" }, { name: "Eyepatch" }, { name: "FlatCap" }, { name: "HardHat" }, { name: "Hat" }, { name: "Headband" }, { name: "HeartGlasses" }, { name: "HockeyMask" }, { name: "Mohawk" }, { name: "MouthFaceMask" }, { name: "PirateHat" }, { name: "PixelatedShades" }, { name: "PlayerHeadphones" }, { name: "PorkPie" }, { name: "PropellerCap" }, { name: "PumpkinHead" }, { name: "RectangleGlasses" }, { name: "RoundGlasses" }, { name: "SantaHat" }, { name: "Snapback" }, { name: "SnapbackFlat" }, { name: "SpikyHair" }, { name: "TurkeyHat" }, { name: "VikingHelmet" }, { name: "WitchHat" }] },
+    accessories: { name: "Accessories", icon: "\u{1F48E}", items: [{ name: "BakedTurkey" }, { name: "BirthdayCake" }, { name: "Cassette" }, { name: "CassettePlayer" }, { name: "Ducko" }, { name: "Goatee" }, { name: "GoldenChain" }, { name: "Mushache" }, { name: "SantaBeard" }, { name: "Shroom" }, { name: "SilverChain" }, { name: "StripedTie" }, { name: "Tie" }] },
+    trails: { name: "Trails", icon: "\u2728", items: [{ name: "Wood Trail" }, { name: "Stone Trail" }, { name: "Iron Trail" }, { name: "Bronze Trail" }, { name: "Silver Trail" }, { name: "Gold Trail" }, { name: "Platinum Trail" }, { name: "Diamond Trail" }, { name: "Champion Trail" }, { name: "ElectricHands" }, { name: "Fire" }, { name: "Floating Hearts" }, { name: "MenacingEffect" }, { name: "Snowflakes" }, { name: "VampireAura" }] },
+    wrestlers: { name: "Wrestlers", icon: "\u{1F93C}", items: [{ name: "Alex" }, { name: "Bill" }, { name: "Daniel" }, { name: "Hannes" }, { name: "Isaac" }, { name: "James" }, { name: "John" }, { name: "Joseph" }, { name: "Kurt's" }, { name: "Lucy" }, { name: "Peter" }, { name: "Robbie" }, { name: "SkutteOleg2016" }, { name: "Waddle" }, { name: "Will" }] }
+  };
+  const SKIN_TYPES = {
+    normal: { label: "Normal", tv: "hmm" },
+    bot: { label: "Bot", tv: "This is clearly a bot" },
+    shiny: { label: "Shiny", tv: "Shiny boi" }
+  };
+  const EFFECTS = [
+    { n: "None", v: [0, 0, 0, 1] },
+    { n: "Shadow", v: [-3, -3, -3, 1] },
+    { n: "Black", v: [-6, -6, -6, 1] },
+    { n: "Eyes", v: [-4, -4, -4, 1] },
+    { n: "Neon", v: [1778e4, 1778e4, -1778e4, -1] },
+    { n: "\u221E", v: [Infinity, Infinity, Infinity, 1] },
+    { n: "Red", v: [-2, 0, 0, 1] },
+    { n: "Green", v: [0, -2, 0, 1] },
+    { n: "Blue", v: [0, 0, -2, 1] },
+    { n: "Pink", v: [-2, 0, -2, 1] },
+    { n: "Cyan", v: [0, -2, -2, 1] },
+    { n: "Yellow", v: [-2, -2, 0, 1] }
+  ];
+  const COLOR_WHEEL = [
+    { name: "Red", rgb: [1, 0, 0] },
+    { name: "Red-Orng", rgb: [1, 0.5, 0] },
+    { name: "Yellow", rgb: [1, 1, 0] },
+    { name: "Yel-Green", rgb: [0.5, 1, 0] },
+    { name: "Green", rgb: [0, 1, 0] },
+    { name: "Grn-Cyan", rgb: [0, 1, 0.5] },
+    { name: "Cyan", rgb: [0, 1, 1] },
+    { name: "Cyn-Blue", rgb: [0, 0.5, 1] },
+    { name: "Blue", rgb: [0, 0, 1] },
+    { name: "Blu-Pink", rgb: [0.5, 0, 1] },
+    { name: "Pink", rgb: [1, 0, 1] },
+    { name: "Pink-Red", rgb: [1, 0, 0.5] }
+  ];
+  const MAPS = [
+    { id: "streets", name: "Streets", cat: "streets", color: "#f59e0b", desc: "DayNight cycle, dayC\xD70.5" },
+    { id: "basket", name: "Basketball", cat: "others", color: "#3b82f6", desc: "HDR ambient, offset +2.0" },
+    { id: "bouncy", name: "Bouncy World", cat: "others", color: "#10b981", desc: "HDR ambient, offset +2.0" },
+    { id: "pole", name: "Pole V2", cat: "others", color: "#6366f1", desc: "HDR ambient, offset +2.0" },
+    { id: "pub", name: "The Pub", cat: "others", color: "#ec4899", desc: "HDR ambient, offset +2.0" },
+    { id: "cage", name: "Cage", cat: "cage", color: "#8b5cf6", desc: "Extreme HDR (1e37+, log10)" }
+  ];
+  const STREETS_OTHERS_OFFSET = 2;
+  const CAGE_LOG_CENTER = 37.5;
+  const CAGE_LOG_SCALE = 2;
+  function cageChannelToStreets(v) {
+    if (v === 0) return 0;
+    if (!isFinite(v)) return v > 0 ? 1 : -1;
+    const sign = v < 0 ? -1 : 1;
+    const absV = Math.abs(v);
+    if (absV < 1) return v;
+    return sign * (Math.log10(absV) - CAGE_LOG_CENTER) / CAGE_LOG_SCALE;
+  }
+  function streetsChannelToCage(v) {
+    if (v === 0) return 0;
+    if (!isFinite(v)) return v;
+    const sign = v < 0 ? -1 : 1;
+    return sign * Math.pow(10, Math.abs(v) * CAGE_LOG_SCALE + CAGE_LOG_CENTER);
+  }
+  function toStreetsSpace(c, fromCat) {
+    if (fromCat === "streets") return [...c];
+    if (fromCat === "others") return [c[0] + STREETS_OTHERS_OFFSET, c[1] + STREETS_OTHERS_OFFSET, c[2] + STREETS_OTHERS_OFFSET, c[3]];
+    if (fromCat === "cage") return [cageChannelToStreets(c[0]), cageChannelToStreets(c[1]), cageChannelToStreets(c[2]), c[3]];
+    return [...c];
+  }
+  function fromStreetsSpace(c, toCat) {
+    if (toCat === "streets") return [...c];
+    if (toCat === "others") return [c[0] - STREETS_OTHERS_OFFSET, c[1] - STREETS_OTHERS_OFFSET, c[2] - STREETS_OTHERS_OFFSET, c[3]];
+    if (toCat === "cage") return [streetsChannelToCage(c[0]), streetsChannelToCage(c[1]), streetsChannelToCage(c[2]), c[3]];
+    return [...c];
+  }
+  function convertColor(c, fromCat, toCat) {
+    if (fromCat === toCat) return [...c];
+    return fromStreetsSpace(toStreetsSpace(c, fromCat), toCat);
+  }
+  const fmtC = (c) => c.map((v) => v === Infinity ? "Infinity" : v === -Infinity ? "-Infinity" : String(v)).join(",");
+  const c01 = (v) => Math.max(0, Math.min(1, Math.abs(v)));
+  const toRgb = (r, g, b, a = 1) => "rgba(" + Math.round(c01(r) * 255) + "," + Math.round(c01(g) * 255) + "," + Math.round(c01(b) * 255) + "," + c01(a) + ")";
+  function parseP(s) {
+    try {
+      const [cp, ip] = s.split("[divEnd]");
+      const g = cp.split("[gEnd]");
+      const p = (x) => x.split(",").map((v) => v.trim() === "Infinity" ? Infinity : v.trim() === "-Infinity" ? -Infinity : parseFloat(v));
+      return {
+        st: g[0] || "hmm",
+        sk: g[1] ? p(g[1]) : [0.8, 0.7, 0.5, 1],
+        pr: g[2] ? p(g[2]) : [0, 0, 0, 1],
+        se: g[3] ? p(g[3]) : [0, 0, 0, 1],
+        bl: g[4] ? p(g[4]) : [0.909, 0, 0, 1],
+        it: ip ? ip.split("[itemEnd]").map((x) => x.trim()).filter((x) => x && !isNaN(x)) : []
+      };
+    } catch (e) {
+      return null;
+    }
+  }
+  function genP(s) {
+    return s.st + "[gEnd]" + fmtC(s.sk) + "[gEnd]" + fmtC(s.pr) + "[gEnd]" + fmtC(s.se) + "[gEnd]" + fmtC(s.bl) + "[divEnd]" + s.it.join("[itemEnd]") + (s.it.length ? "[itemEnd]" : "");
+  }
+  function convertPreset(presetStr, fromMapId, toMapId) {
+    const fromMap = MAPS.find((m) => m.id === fromMapId);
+    const toMap = MAPS.find((m) => m.id === toMapId);
+    if (!fromMap || !toMap) return null;
+    const p = parseP(presetStr);
+    if (!p) return null;
+    return genP({ st: p.st, sk: p.sk, pr: convertColor(p.pr, fromMap.cat, toMap.cat), se: convertColor(p.se, fromMap.cat, toMap.cat), bl: p.bl, it: p.it });
+  }
+  function detectMap(pr) {
+    const a = (Math.abs(pr[0]) + Math.abs(pr[1]) + Math.abs(pr[2])) / 3;
+    if (a > 1e10) return "cage";
+    if (a > 3) return "others";
+    return "streets";
+  }
+  function detectMapId(pr) {
+    const cat = detectMap(pr);
+    if (cat === "cage") return "cage";
+    if (cat === "others") return "basket";
+    return "streets";
+  }
+  function Mannequin({ sk, pr, se, bl, st }) {
+    const skin = toRgb(sk[0], sk[1], sk[2]);
+    const prim = toRgb(Math.abs(pr[0]), Math.abs(pr[1]), Math.abs(pr[2]));
+    const sec = toRgb(Math.abs(se[0]), Math.abs(se[1]), Math.abs(se[2]));
+    const bld = toRgb(Math.abs(bl[0]), Math.abs(bl[1]), Math.abs(bl[2]));
+    const negPr = pr[0] < 0 || pr[1] < 0 || pr[2] < 0;
+    const isShiny = st === "shiny", isBot = st === "bot";
+    const glow = negPr ? "drop-shadow(0 0 8px " + prim + ")" : "none";
+    return /* @__PURE__ */ React.createElement("div", { style: { position: "relative", width: "100%", height: 200, borderRadius: 12, overflow: "hidden", border: "2px solid #333", background: "#0d0d1a" } }, /* @__PURE__ */ React.createElement("div", { style: { position: "absolute", inset: 0, background: "radial-gradient(ellipse at 50% 80%, #1a1a3a 0%, #08080f 100%)", pointerEvents: "none" } }), /* @__PURE__ */ React.createElement("svg", { viewBox: "0 0 100 200", style: { position: "absolute", inset: 0, width: "100%", height: "100%", filter: glow } }, /* @__PURE__ */ React.createElement("ellipse", { cx: "50", cy: "195", rx: "28", ry: "5", fill: "#000", opacity: ".4" }), /* @__PURE__ */ React.createElement("ellipse", { cx: "50", cy: "35", rx: "18", ry: "22", fill: skin, stroke: "#222", strokeWidth: ".5" }), /* @__PURE__ */ React.createElement("circle", { cx: "43", cy: "32", r: "2.5", fill: "#111" }), /* @__PURE__ */ React.createElement("circle", { cx: "57", cy: "32", r: "2.5", fill: "#111" }), /* @__PURE__ */ React.createElement("circle", { cx: "43.5", cy: "31.5", r: "1", fill: "#eee" }), /* @__PURE__ */ React.createElement("circle", { cx: "57.5", cy: "31.5", r: "1", fill: "#eee" }), /* @__PURE__ */ React.createElement("rect", { x: "32", y: "55", width: "36", height: "60", rx: "8", fill: prim, stroke: "#222", strokeWidth: ".5" }), /* @__PURE__ */ React.createElement("rect", { x: "20", y: "58", width: "14", height: "45", rx: "6", fill: skin, stroke: "#222", strokeWidth: ".5" }), /* @__PURE__ */ React.createElement("rect", { x: "66", y: "58", width: "14", height: "45", rx: "6", fill: skin, stroke: "#222", strokeWidth: ".5" }), /* @__PURE__ */ React.createElement("ellipse", { cx: "27", cy: "106", rx: "7", ry: "8", fill: skin, stroke: "#222", strokeWidth: ".5" }), /* @__PURE__ */ React.createElement("ellipse", { cx: "73", cy: "106", rx: "7", ry: "8", fill: skin, stroke: "#222", strokeWidth: ".5" }), /* @__PURE__ */ React.createElement("path", { d: "M35,112 L35,162 Q43,166 50,163 Q57,166 65,162 L65,112 Z", fill: sec, stroke: "#222", strokeWidth: ".5" }), /* @__PURE__ */ React.createElement("rect", { x: "35", y: "112", width: "13", height: "50", rx: "5", fill: sec, stroke: "#222", strokeWidth: ".5" }), /* @__PURE__ */ React.createElement("rect", { x: "52", y: "112", width: "13", height: "50", rx: "5", fill: sec, stroke: "#222", strokeWidth: ".5" }), /* @__PURE__ */ React.createElement("rect", { x: "33", y: "158", width: "17", height: "8", rx: "3", fill: "#333", stroke: "#222", strokeWidth: ".5" }), /* @__PURE__ */ React.createElement("rect", { x: "50", y: "158", width: "17", height: "8", rx: "3", fill: "#333", stroke: "#222", strokeWidth: ".5" }), (isShiny || isBot) && /* @__PURE__ */ React.createElement("g", null, /* @__PURE__ */ React.createElement("rect", { x: "8", y: "18", width: "36", height: "13", rx: "3", fill: isShiny ? "#f59e0b" : "#7c3aed", opacity: ".9" }), /* @__PURE__ */ React.createElement("text", { x: "26", y: "28", textAnchor: "middle", fill: "#000", fontSize: "7", fontWeight: "bold", fontFamily: "inherit" }, isShiny ? "SHINY" : "BOT")), /* @__PURE__ */ React.createElement("rect", { x: "77", y: "18", width: "14", height: "14", rx: "2", fill: bld, stroke: "#333", strokeWidth: ".5" }), /* @__PURE__ */ React.createElement("text", { x: "84", y: "42", textAnchor: "middle", fill: "#555", fontSize: "5", fontFamily: "inherit" }, "BLD")), /* @__PURE__ */ React.createElement("div", { style: { position: "absolute", bottom: 8, left: 8, display: "flex", gap: 6, zIndex: 3 } }, [{ c: skin, l: "Skin" }, { c: prim, l: "Prim" }, { c: sec, l: "Sec" }, { c: bld, l: "Blood" }].map((x, i) => /* @__PURE__ */ React.createElement("div", { key: i, style: { display: "flex", alignItems: "center", gap: 2 } }, /* @__PURE__ */ React.createElement("div", { style: { width: 14, height: 14, borderRadius: 3, background: x.c, border: "1px solid #555" } }), /* @__PURE__ */ React.createElement("span", { style: { fontSize: 8, color: "#555" } }, x.l)))));
+  }
+  function ColorSlider({ label, value, onChange, min = -20, max = 1, step = 1e-3, color }) {
+    return /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 4 } }, /* @__PURE__ */ React.createElement("span", { style: { width: 16, height: 16, borderRadius: 3, background: color, display: "inline-block", border: "1px solid #555", flexShrink: 0 } }), /* @__PURE__ */ React.createElement("span", { style: { width: 20, fontSize: 11, color: "#aaa", fontWeight: 700 } }, label), /* @__PURE__ */ React.createElement(
+      "input",
+      {
+        type: "range",
+        min,
+        max,
+        step,
+        value: isFinite(value) ? value : 0,
+        onChange: (e) => onChange(parseFloat(e.target.value)),
+        style: { flex: 1, accentColor: color }
+      }
+    ), /* @__PURE__ */ React.createElement(
+      "input",
+      {
+        type: "number",
+        value,
+        step,
+        onChange: (e) => onChange(parseFloat(e.target.value) || 0),
+        style: { width: 80, background: "#1a1a2e", border: "1px solid #333", borderRadius: 4, color: "#fff", fontSize: 11, padding: "2px 4px", textAlign: "right", fontFamily: "inherit" }
+      }
+    ));
+  }
+  function RGBAEditor({ label, value, onChange, accent = "#7c3aed" }) {
+    const [r, g, b, a] = value;
+    const set = (i, v) => {
+      const n = [...value];
+      n[i] = v;
+      onChange(n);
     };
-  } catch(e) { return null; }
-}
+    const prev = toRgb(r, g, b, Math.abs(a));
+    const neg = r < 0 || g < 0 || b < 0;
+    return /* @__PURE__ */ React.createElement("div", { style: { background: "#0d0d1a", borderRadius: 8, padding: 10, marginBottom: 8, border: "1px solid #222" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 8 } }, /* @__PURE__ */ React.createElement("div", { style: { width: 28, height: 28, borderRadius: 6, background: prev, border: "2px solid #444", boxShadow: neg ? "0 0 12px " + prev : "none" } }), /* @__PURE__ */ React.createElement("span", { style: { fontWeight: 700, fontSize: 13, color: accent } }, label), neg && /* @__PURE__ */ React.createElement("span", { style: { fontSize: 10, color: "#ff6b9d", background: "#2a1020", padding: "1px 6px", borderRadius: 8 } }, "NEGATIVO")), /* @__PURE__ */ React.createElement(ColorSlider, { label: "R", value: r, onChange: (v) => set(0, v), color: "#ff4444" }), /* @__PURE__ */ React.createElement(ColorSlider, { label: "G", value: g, onChange: (v) => set(1, v), color: "#44ff44" }), /* @__PURE__ */ React.createElement(ColorSlider, { label: "B", value: b, onChange: (v) => set(2, v), color: "#4488ff" }), /* @__PURE__ */ React.createElement(ColorSlider, { label: "A", value: a, onChange: (v) => set(3, v), min: -2, max: 2, color: "#ffffff" }));
+  }
+  function MapSelector({ maps, selected, onSelect, mode }) {
+    return /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 4 } }, maps.map((m) => /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        key: m.id,
+        onClick: () => onSelect(m.id),
+        className: "map-chip" + (selected === m.id ? mode === "from" ? " active-from" : " active-to" : ""),
+        style: selected === m.id ? { borderColor: m.color, color: m.color, background: m.color + "18" } : {}
+      },
+      /* @__PURE__ */ React.createElement("span", { style: { display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: m.color, marginRight: 4, verticalAlign: "middle" } }),
+      m.name
+    )));
+  }
+  function ConversionDetails({ fromMap, toMap, inputPreset, outputPreset }) {
+    if (!inputPreset || !outputPreset) return null;
+    const pIn = parseP(inputPreset);
+    const pOut = parseP(outputPreset);
+    if (!pIn || !pOut) return null;
+    const from = MAPS.find((m) => m.id === fromMap);
+    const to = MAPS.find((m) => m.id === toMap);
+    const isCage = from?.cat === "cage" || to?.cat === "cage";
+    const fmt = (v) => typeof v === "number" && isFinite(v) ? v.toFixed(3) : String(v);
+    return /* @__PURE__ */ React.createElement("div", { style: { background: "#0d0d1a", border: "1px solid #222", padding: 8, marginTop: 8, fontSize: 9, borderRadius: 6 } }, /* @__PURE__ */ React.createElement("div", { style: { fontWeight: 700, color: "#7c3aed", marginBottom: 6, fontSize: 10 } }, "Conversion details"), /* @__PURE__ */ React.createElement("div", { className: "detail-row" }, /* @__PURE__ */ React.createElement("span", null, "Method"), /* @__PURE__ */ React.createElement("span", { style: { color: isCage ? "#8b5cf6" : "#10b981" } }, from?.cat === to?.cat ? "No change (same group)" : isCage ? "Logarithmic (Cage HDR)" : "Linear (offset \xB1" + STREETS_OTHERS_OFFSET + ")")), /* @__PURE__ */ React.createElement("div", { className: "detail-row" }, /* @__PURE__ */ React.createElement("span", null, "Prim IN"), /* @__PURE__ */ React.createElement("span", { style: { color: "#f59e0b" } }, "[", pIn.pr.map(fmt).join(", "), "]")), /* @__PURE__ */ React.createElement("div", { className: "detail-row" }, /* @__PURE__ */ React.createElement("span", null, "Prim OUT"), /* @__PURE__ */ React.createElement("span", { style: { color: "#10b981" } }, "[", pOut.pr.map(fmt).join(", "), "]")), /* @__PURE__ */ React.createElement("div", { className: "detail-row" }, /* @__PURE__ */ React.createElement("span", null, "Sec IN"), /* @__PURE__ */ React.createElement("span", { style: { color: "#f59e0b" } }, "[", pIn.se.map(fmt).join(", "), "]")), /* @__PURE__ */ React.createElement("div", { className: "detail-row" }, /* @__PURE__ */ React.createElement("span", null, "Sec OUT"), /* @__PURE__ */ React.createElement("span", { style: { color: "#10b981" } }, "[", pOut.se.map(fmt).join(", "), "]")), /* @__PURE__ */ React.createElement("div", { style: { marginTop: 6, fontSize: 8, color: "#555" } }, /* @__PURE__ */ React.createElement("div", { style: { color: from?.color } }, "Source: ", from?.desc), /* @__PURE__ */ React.createElement("div", { style: { color: to?.color, marginTop: 2 } }, "Target: ", to?.desc)));
+  }
+  function App() {
+    const [tab, setTab] = useState("colors");
+    const [skinType, setSkinType] = useState("normal");
+    const [skinColor, setSkinColor] = useState([0.787, 0.667, 0.529, 1]);
+    const [primary, setPrimary] = useState([0, 0, 0, 1]);
+    const [secondary, setSecondary] = useState([0, 0, 0, 1]);
+    const [blood, setBlood] = useState([0.909, 0, 0, 1]);
+    const [activeSlot, setActiveSlot] = useState("primary");
+    const [items, setItems] = useState(["905", "2655", "16", "112", "35", "63", "1855"]);
+    const [itemFilter, setItemFilter] = useState("tops");
+    const [manualId, setManualId] = useState("");
+    const [importTxt, setImportTxt] = useState("");
+    const [copied, setCopied] = useState(false);
+    const [convInput, setConvInput] = useState("");
+    const [convFrom, setConvFrom] = useState("streets");
+    const [convTo, setConvTo] = useState("basket");
+    const [convResult, setConvResult] = useState("");
+    const [convCopied, setConvCopied] = useState(false);
+    const [convDet, setConvDet] = useState("");
+    const [showDetails, setShowDetails] = useState(false);
+    const tv = SKIN_TYPES[skinType].tv;
+    const preset = useMemo(() => genP({ st: tv, sk: skinColor, pr: primary, se: secondary, bl: blood, it: items }), [tv, skinColor, primary, secondary, blood, items]);
+    const doImp = (txt) => {
+      const s = txt || importTxt;
+      const p = parseP(s);
+      if (!p) return;
+      if (p.st === "This is clearly a bot") setSkinType("bot");
+      else if (p.st === "Shiny boi") setSkinType("shiny");
+      else setSkinType("normal");
+      setSkinColor(p.sk);
+      setPrimary(p.pr);
+      setSecondary(p.se);
+      setBlood(p.bl);
+      setItems(p.it);
+      setImportTxt("");
+      setTab("colors");
+    };
+    const doCopy = (t) => {
+      try {
+        navigator.clipboard.writeText(t || preset);
+      } catch (e) {
+        const a = document.createElement("textarea");
+        a.value = t || preset;
+        document.body.appendChild(a);
+        a.select();
+        document.execCommand("copy");
+        document.body.removeChild(a);
+      }
+      if (!t) {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2e3);
+      }
+    };
+    const applyFx = (v) => {
+      if (activeSlot === "primary") setPrimary([...v]);
+      else if (activeSlot === "secondary") setSecondary([...v]);
+      else if (activeSlot === "blood") setBlood([...v]);
+      else setSkinColor([...v]);
+    };
+    const shinyBoi = () => {
+      setSkinType("shiny");
+      setSkinColor([1, 1, 1, 1]);
+      setPrimary([1, 1, 1, 1]);
+      setSecondary([1, 1, 1, 1]);
+      setBlood([0.909, 0, 0, 1]);
+      setItems(["905", "2555", "35", "112", "109", "38", "2", "1202"]);
+    };
+    const doConv = useCallback(() => {
+      const result = convertPreset(convInput, convFrom, convTo);
+      if (result) {
+        setConvResult(result);
+        setShowDetails(true);
+      }
+    }, [convInput, convFrom, convTo]);
+    const hConvIn = (t) => {
+      setConvInput(t);
+      setConvResult("");
+      setShowDetails(false);
+      const p = parseP(t);
+      if (p) {
+        const d = detectMap(p.pr);
+        setConvDet(d);
+        const detId = detectMapId(p.pr);
+        setConvFrom(detId);
+        if (d === "streets") setConvTo("basket");
+        else if (d === "cage") setConvTo("streets");
+        else setConvTo("streets");
+      }
+    };
+    const swapMaps = () => {
+      const f = convFrom, t = convTo;
+      setConvFrom(t);
+      setConvTo(f);
+      setConvResult("");
+      setShowDetails(false);
+    };
+    const slotValue = activeSlot === "primary" ? primary : activeSlot === "secondary" ? secondary : activeSlot === "blood" ? blood : skinColor;
+    const setSlotValue = activeSlot === "primary" ? setPrimary : activeSlot === "secondary" ? setSecondary : activeSlot === "blood" ? setBlood : setSkinColor;
+    const slotAccent = activeSlot === "blood" ? "#e63946" : activeSlot === "primary" ? "#f59e0b" : activeSlot === "secondary" ? "#3b82f6" : "#7c3aed";
+    const slotLabel = activeSlot === "primary" ? "Primary Color" : activeSlot === "secondary" ? "Secondary Color" : activeSlot === "blood" ? "Blood Color" : "Skin Color";
+    const fromMapObj = MAPS.find((m) => m.id === convFrom);
+    const toMapObj = MAPS.find((m) => m.id === convTo);
+    const isCageConv = fromMapObj?.cat === "cage" || toMapObj?.cat === "cage";
+    const btnStyle = (active, accent = "#7c3aed") => ({
+      flex: 1,
+      background: active ? accent : "#1a1a2e",
+      border: "1px solid " + (active ? accent : "#333"),
+      borderRadius: 5,
+      color: active ? "#fff" : "#888",
+      fontSize: 10,
+      fontWeight: 700,
+      padding: "5px 0",
+      cursor: "pointer",
+      transition: "all 0.15s",
+      fontFamily: "inherit"
+    });
+    const tabBtn = (id, label, sub) => /* @__PURE__ */ React.createElement("button", { key: id, onClick: () => setTab(id), style: {
+      flex: 1,
+      background: tab === id ? "#0d0d1a" : "transparent",
+      border: "none",
+      borderBottom: tab === id ? "2px solid #7c3aed" : "2px solid transparent",
+      color: tab === id ? "#fff" : "#666",
+      padding: "10px 0",
+      cursor: "pointer",
+      fontSize: 11,
+      fontWeight: 700,
+      fontFamily: "inherit"
+    } }, label, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 9, color: tab === id ? "#7c3aed" : "#444", marginTop: 1 } }, sub));
+    const sL = (t) => /* @__PURE__ */ React.createElement("div", { style: { fontSize: 9, color: "#666", fontWeight: 700, marginBottom: 4, marginTop: 6, letterSpacing: 1 } }, t);
+    return /* @__PURE__ */ React.createElement("div", { style: { color: "#e0e0e0", minHeight: "100vh" } }, /* @__PURE__ */ React.createElement("div", { style: { background: "linear-gradient(135deg, #0a0a1a 0%, #1a0a2e 50%, #0a0a1a 100%)", borderBottom: "2px solid #7c3aed", padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { style: { position: "absolute", top: 0, left: 0, right: 0, height: 1, background: "linear-gradient(90deg,transparent,#7c3aed,transparent)" } }), /* @__PURE__ */ React.createElement("h1", { style: { fontFamily: "'Orbitron',monospace", fontSize: 18, fontWeight: 900, margin: 0, background: "linear-gradient(90deg, #7c3aed, #ec4899, #f59e0b)", backgroundSize: "200%", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", animation: "slideGlow 3s linear infinite" } }, "DW2 PRESET EDITOR"), /* @__PURE__ */ React.createElement("span", { style: { fontSize: 10, color: "#555", fontWeight: 600 } }, "by Nixagorn \u2022 V3")), /* @__PURE__ */ React.createElement("button", { onClick: shinyBoi, style: { background: "linear-gradient(135deg, #f59e0b, #fcd34d)", border: "none", borderRadius: 6, padding: "6px 12px", cursor: "pointer", fontSize: 10, fontWeight: 700, color: "#000", fontFamily: "inherit" } }, "\u2728 SHINY BOI")), /* @__PURE__ */ React.createElement("div", { style: { padding: "8px 16px", borderBottom: "1px solid #1a1a2e", display: "flex", gap: 4 } }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 9, color: "#666", fontWeight: 700, alignSelf: "center", marginRight: 4 } }, "SKIN TYPE:"), Object.entries(SKIN_TYPES).map(([k, v]) => /* @__PURE__ */ React.createElement("button", { key: k, onClick: () => setSkinType(k), style: btnStyle(skinType === k) }, v.label))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", borderBottom: "1px solid #1a1a2e" } }, tabBtn("colors", "\u{1F3A8} Colors", "Skin & Clothes"), tabBtn("convert", "\u21C4 Convert", "Between Maps"), tabBtn("items", "\u{1F455} Items", "Clothes & Trails"), tabBtn("preset", "\u{1F4E4} Preset", "Export / Import")), /* @__PURE__ */ React.createElement("div", { style: { padding: "12px 16px", animation: "fadeIn 0.2s ease", maxHeight: "70vh", overflowY: "auto" } }, tab === "colors" && /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Mannequin, { sk: skinColor, pr: primary, se: secondary, bl: blood, st: skinType }), /* @__PURE__ */ React.createElement("div", { style: { marginTop: 10 } }, sL("ACTIVE SLOT"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 3 } }, [{ id: "skinColor", l: "Skin", a: "#7c3aed" }, { id: "primary", l: "Primary", a: "#f59e0b" }, { id: "secondary", l: "Secondary", a: "#3b82f6" }, { id: "blood", l: "Blood", a: "#e63946" }].map((s) => /* @__PURE__ */ React.createElement("button", { key: s.id, onClick: () => setActiveSlot(s.id), style: { ...btnStyle(activeSlot === s.id, s.a), fontSize: 9 } }, s.l)))), activeSlot === "skinColor" && /* @__PURE__ */ React.createElement("div", null, sL("\u{1F3A8} BASE COLOR"), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 4, marginBottom: 10 } }, COLOR_WHEEL.map((c, i) => /* @__PURE__ */ React.createElement("button", { key: i, onClick: () => setSkinColor([...c.rgb, 1]), title: c.name, style: {
+      background: "rgb(" + c.rgb.map((v) => Math.round(v * 255)).join(",") + ")",
+      border: "2px solid #333",
+      borderRadius: 6,
+      height: 28,
+      cursor: "pointer",
+      color: c.rgb[0] + c.rgb[1] > 1.2 ? "#000" : "#fff",
+      fontSize: 8,
+      fontWeight: 700,
+      fontFamily: "inherit"
+    } }, c.name)))), activeSlot !== "skinColor" && /* @__PURE__ */ React.createElement("div", null, sL("\u26A1 QUICK PRESETS"), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 3, marginBottom: 8 } }, EFFECTS.map((e, i) => /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        key: i,
+        onClick: () => applyFx(e.v),
+        style: { background: "#1a1a2e", border: "1px solid #333", borderRadius: 6, padding: "5px 2px", cursor: "pointer", color: "#ccc", fontSize: 9, fontWeight: 600, fontFamily: "inherit" },
+        onMouseEnter: (ev) => {
+          ev.target.style.borderColor = "#7c3aed";
+          ev.target.style.color = "#fff";
+        },
+        onMouseLeave: (ev) => {
+          ev.target.style.borderColor = "#333";
+          ev.target.style.color = "#ccc";
+        }
+      },
+      e.n
+    )))), /* @__PURE__ */ React.createElement(RGBAEditor, { label: slotLabel, value: slotValue, onChange: setSlotValue, accent: slotAccent })), tab === "convert" && /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { style: { background: "#0a1a0a", border: "1px solid #1a3a1a", padding: 8, marginBottom: 10, fontSize: 9, color: "#4a8", lineHeight: 1.6, borderRadius: 6 } }, "\u25C6 Conversion based on real source data (Assembly-CSharp + .rtsc). Streets uses DayNightCycle. Cage uses logarithmic scale (log10)."), sL("PASTE YOUR PRESET"), /* @__PURE__ */ React.createElement(
+      "textarea",
+      {
+        value: convInput,
+        onChange: (e) => hConvIn(e.target.value),
+        placeholder: "Paste the full .dw2p preset string...",
+        rows: 3,
+        style: { width: "100%", background: "#0d0d1a", border: "1px solid #333", color: "#ddd", padding: 8, fontSize: 9, resize: "vertical", borderRadius: 6, marginBottom: 4 }
+      }
+    ), convDet && /* @__PURE__ */ React.createElement("div", { style: { fontSize: 9, padding: "4px 8px", background: convDet === "cage" ? "#1a0a1a" : "#1a1a0a", border: "1px solid " + (convDet === "cage" ? "#8b5cf6" : "#333"), color: convDet === "cage" ? "#c4b5fd" : "#f59e0b", display: "flex", alignItems: "center", gap: 6, borderRadius: 6, marginBottom: 4 } }, /* @__PURE__ */ React.createElement("span", { style: { width: 8, height: 8, borderRadius: "50%", background: convDet === "cage" ? "#8b5cf6" : convDet === "streets" ? "#f59e0b" : "#3b82f6" } }), "Detected: ", /* @__PURE__ */ React.createElement("strong", null, convDet === "streets" ? "Streets" : convDet === "cage" ? "Cage" : "Others (Basketball/Bouncy/Pole/Pub)")), sL("FROM (CURRENT MAP)"), /* @__PURE__ */ React.createElement(MapSelector, { maps: MAPS, selected: convFrom, onSelect: (id) => {
+      setConvFrom(id);
+      setConvResult("");
+      setShowDetails(false);
+    }, mode: "from" }), /* @__PURE__ */ React.createElement("div", { className: "conv-arrow", style: { cursor: "pointer" }, onClick: swapMaps }, /* @__PURE__ */ React.createElement("span", { style: { background: "#08080f", padding: "0 12px", position: "relative", zIndex: 1 } }, "\u21C5 SWAP")), sL("TO (TARGET MAP)"), /* @__PURE__ */ React.createElement(MapSelector, { maps: MAPS, selected: convTo, onSelect: (id) => {
+      setConvTo(id);
+      setConvResult("");
+      setShowDetails(false);
+    }, mode: "to" }), isCageConv && /* @__PURE__ */ React.createElement("div", { className: "cage-warn" }, "\u26A0 Cage conversion uses logarithmic scale (log10). Extreme values (1e37+) are normalized. Result may need fine-tuning in-game."), convFrom && convTo && convFrom !== convTo && /* @__PURE__ */ React.createElement("div", { style: { marginTop: 6, padding: "5px 8px", background: "#0d0d1a", border: "1px solid #1a1a2e", fontSize: 8, color: "#444", display: "flex", justifyContent: "space-between", borderRadius: 4 } }, /* @__PURE__ */ React.createElement("span", null, fromMapObj?.cat === toMapObj?.cat ? "Same group \u2014 no change" : isCageConv ? "Cage \u2194 " + (fromMapObj?.cat === "cage" ? toMapObj?.name : fromMapObj?.name) + " (log10)" : "Offset: " + (fromMapObj?.cat === "streets" ? "-" : "+") + "2.0 on RGB channels"), /* @__PURE__ */ React.createElement("span", { style: { color: fromMapObj?.color } }, fromMapObj?.name), /* @__PURE__ */ React.createElement("span", null, "\u2192"), /* @__PURE__ */ React.createElement("span", { style: { color: toMapObj?.color } }, toMapObj?.name)), /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        onClick: doConv,
+        disabled: !convInput.includes("[gEnd]") || convFrom === convTo,
+        style: {
+          width: "100%",
+          marginTop: 10,
+          background: !convInput.includes("[gEnd]") || convFrom === convTo ? "#1a1a2e" : isCageConv ? "linear-gradient(135deg,#7c3aed,#8b5cf6)" : "linear-gradient(135deg, #7c3aed, #ec4899)",
+          border: "none",
+          color: "#fff",
+          padding: "12px 0",
+          borderRadius: 6,
+          cursor: !convInput.includes("[gEnd]") || convFrom === convTo ? "not-allowed" : "pointer",
+          fontFamily: "'Orbitron',monospace",
+          fontSize: 14,
+          fontWeight: 700,
+          letterSpacing: 2
+        }
+      },
+      convFrom === convTo ? "\u2014 SAME MAP" : isCageConv ? "\u26A1 CONVERT (CAGE)" : "\u21C4 CONVERT"
+    ), convResult && /* @__PURE__ */ React.createElement("div", { style: { marginTop: 10 } }, sL("RESULT"), /* @__PURE__ */ React.createElement("div", { style: { background: "#0d0d1a", border: "1px solid #1a3a1a", padding: 8, fontSize: 9, color: "#4a8", wordBreak: "break-all", lineHeight: 1.5, maxHeight: 80, overflowY: "auto", fontFamily: "inherit", borderRadius: 6 } }, convResult), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 4, marginTop: 6 } }, /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        onClick: () => {
+          doCopy(convResult);
+          setConvCopied(true);
+          setTimeout(() => setConvCopied(false), 2e3);
+        },
+        style: { flex: 1, background: convCopied ? "#10b981" : "linear-gradient(135deg,#7c3aed,#ec4899)", border: "none", color: "#fff", padding: "8px 0", cursor: "pointer", borderRadius: 6, fontFamily: "inherit", fontWeight: 700, fontSize: 11 }
+      },
+      convCopied ? "\u2705 COPIED" : "\u{1F4CB} COPY"
+    ), /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        onClick: () => doImp(convResult),
+        style: { flex: 1, background: "#1a1a2e", border: "1px solid #7c3aed", color: "#7c3aed", padding: "8px 0", cursor: "pointer", borderRadius: 6, fontFamily: "inherit", fontWeight: 700, fontSize: 11 }
+      },
+      "\u25B6 EDIT"
+    ), /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        onClick: () => setShowDetails(!showDetails),
+        style: { width: 40, background: "#1a1a2e", border: "1px solid #333", color: showDetails ? "#fff" : "#555", padding: "8px 0", cursor: "pointer", borderRadius: 6, fontFamily: "inherit", fontSize: 11 }
+      },
+      showDetails ? "\u25B2" : "\u25BC"
+    )), showDetails && /* @__PURE__ */ React.createElement(ConversionDetails, { fromMap: convFrom, toMap: convTo, inputPreset: convInput, outputPreset: convResult })), /* @__PURE__ */ React.createElement("div", { style: { marginTop: 14, background: "#0d0d1a", border: "1px solid #1a1a2e", padding: 8, borderRadius: 6 } }, sL("LIGHTING REFERENCE"), [{ m: MAPS[0], bar: "linear-gradient(90deg,#5c5c5c,#b8b8b8)" }, { m: MAPS[1], bar: "linear-gradient(90deg,#1a3a6a,#3b82f6)" }, { m: MAPS[5], bar: "linear-gradient(90deg,#2a1a4a,#8b5cf6,#c4b5fd)" }].map(({ m, bar }, i) => /* @__PURE__ */ React.createElement("div", { key: i, style: { display: "flex", alignItems: "center", gap: 6, marginBottom: 4 } }, /* @__PURE__ */ React.createElement("span", { style: { width: 8, height: 8, borderRadius: "50%", background: m.color, flexShrink: 0 } }), /* @__PURE__ */ React.createElement("span", { style: { color: "#777", width: 65, fontSize: 8 } }, m.name), /* @__PURE__ */ React.createElement("span", { style: { fontSize: 8, color: "#444", flex: 1 } }, m.desc), /* @__PURE__ */ React.createElement("div", { className: "lighting-bar", style: { width: 40, background: bar } }))))), tab === "items" && /* @__PURE__ */ React.createElement("div", null, sL("\u{1F4E6} EQUIPPED (" + items.length + ")"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 8 } }, items.map((id, i) => /* @__PURE__ */ React.createElement("div", { key: i, style: { background: "#1a1040", border: "1px solid #7c3aed", borderRadius: 5, padding: "3px 8px", fontSize: 10, color: "#ccc", display: "flex", alignItems: "center", gap: 4 } }, /* @__PURE__ */ React.createElement("span", null, "#", id), /* @__PURE__ */ React.createElement("button", { onClick: () => setItems((p) => p.filter((_, x) => x !== i)), style: { background: "none", border: "none", color: "#ff4444", cursor: "pointer", fontSize: 12, padding: 0, lineHeight: 1 } }, "\xD7")))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 4, marginBottom: 12 } }, /* @__PURE__ */ React.createElement(
+      "input",
+      {
+        type: "number",
+        placeholder: "Item ID...",
+        value: manualId,
+        onChange: (e) => setManualId(e.target.value),
+        style: { flex: 1, background: "#0d0d1a", border: "1px solid #333", borderRadius: 5, color: "#fff", padding: "4px 8px", fontSize: 11, fontFamily: "inherit" }
+      }
+    ), /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        onClick: () => {
+          if (manualId) {
+            setItems((p) => [...p, manualId]);
+            setManualId("");
+          }
+        },
+        style: { background: "#7c3aed", border: "none", borderRadius: 5, color: "#fff", padding: "4px 12px", cursor: "pointer", fontSize: 11, fontWeight: 700, fontFamily: "inherit" }
+      },
+      "+ ADD"
+    )), sL("FILTER CATEGORY"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 3, marginBottom: 8, flexWrap: "wrap" } }, Object.entries(ITEMS).map(([k, v]) => /* @__PURE__ */ React.createElement("button", { key: k, onClick: () => setItemFilter(k), style: { ...btnStyle(itemFilter === k), flex: "none", padding: "4px 7px", fontSize: 9 } }, v.icon, " ", v.name))), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 5 } }, ITEMS[itemFilter]?.items.map((it, i) => /* @__PURE__ */ React.createElement("div", { key: i, style: { background: "#111", border: "1px solid #1a1a2e", borderRadius: 6, padding: "7px 6px", fontSize: 10, color: "#888" } }, /* @__PURE__ */ React.createElement("div", { style: { fontWeight: 700, color: "#ccc" } }, it.name), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 8, color: "#444", marginTop: 2 } }, "ID: pending"))))), tab === "preset" && /* @__PURE__ */ React.createElement("div", null, sL("\u{1F4CB} GENERATED PRESET"), /* @__PURE__ */ React.createElement("div", { style: { background: "#0d0d1a", border: "1px solid #333", borderRadius: 8, padding: 10, fontSize: 10, color: "#8bc34a", wordBreak: "break-all", lineHeight: 1.5, maxHeight: 120, overflowY: "auto", fontFamily: "inherit" } }, preset), /* @__PURE__ */ React.createElement("button", { onClick: () => doCopy(), style: { width: "100%", marginTop: 8, background: copied ? "#10b981" : "linear-gradient(135deg, #7c3aed, #ec4899)", border: "none", borderRadius: 6, color: "#fff", padding: "10px 0", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "'Orbitron',monospace", letterSpacing: 2 } }, copied ? "\u2705 COPIED!" : "\u{1F4CB} COPY PRESET"), /* @__PURE__ */ React.createElement("div", { style: { background: "#1a1020", border: "1px solid #333", borderRadius: 8, padding: 10, marginTop: 10 } }, sL("\u2B07 DOWNLOAD AS .DW2P"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 4 } }, /* @__PURE__ */ React.createElement(
+      "input",
+      {
+        id: "fnInput",
+        type: "text",
+        placeholder: "preset name...",
+        defaultValue: "my_preset",
+        style: { flex: 1, background: "#0d0d1a", border: "1px solid #333", borderRadius: 5, color: "#fff", padding: "4px 8px", fontSize: 10, fontFamily: "inherit" }
+      }
+    ), /* @__PURE__ */ React.createElement("button", { onClick: () => {
+      const fn = document.getElementById("fnInput").value || "preset";
+      const ext = skinType === "shiny" ? "Shiny boi" : fn;
+      const blob = new Blob([preset], { type: "text/plain" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = ext + ".dw2p";
+      a.click();
+    }, style: { background: "linear-gradient(135deg,#7c3aed,#ec4899)", border: "none", borderRadius: 5, color: "#fff", padding: "4px 12px", cursor: "pointer", fontSize: 11, fontWeight: 700, fontFamily: "inherit" } }, "\u2B07 .DW2P")), skinType === "shiny" && /* @__PURE__ */ React.createElement("div", { style: { fontSize: 8, color: "#f59e0b", marginTop: 4 } }, 'Shiny detected \u2014 file will be saved as "Shiny boi.dw2p"'), /* @__PURE__ */ React.createElement("div", { style: { marginTop: 8, background: "#0d0d1a", border: "1px solid #1a1a2e", borderRadius: 6, padding: "6px 8px" } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 8, color: "#555", marginBottom: 3, fontWeight: 700 } }, "\u{1F4C1} WHERE TO PLACE THE FILE"), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 8, color: "#444", lineHeight: 1.7 } }, /* @__PURE__ */ React.createElement("span", { style: { color: "#7c3aed" } }, "Steam (default):"), /* @__PURE__ */ React.createElement("br", null), /* @__PURE__ */ React.createElement("span", { style: { color: "#666", fontFamily: "inherit" } }, "\u2026\\Steam\\steamapps\\common\\Drunken Wrestlers 2\\Files\\presets")), /* @__PURE__ */ React.createElement("button", { onClick: () => {
+      try {
+        navigator.clipboard.writeText("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Drunken Wrestlers 2\\Files\\presets");
+      } catch (e) {
+      }
+    }, style: { marginTop: 5, background: "#1a1a2e", border: "1px solid #333", borderRadius: 4, color: "#888", padding: "3px 8px", cursor: "pointer", fontSize: 8, fontFamily: "inherit", width: "100%" } }, "\u{1F4CB} Copy path"))), /* @__PURE__ */ React.createElement("div", { style: { background: "#0d0d1a", border: "1px solid #222", borderRadius: 8, padding: 10, marginTop: 8 } }, sL("\u{1F4D6} .DW2P FORMAT STRUCTURE"), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 9, color: "#555", lineHeight: 1.8, fontFamily: "inherit" } }, /* @__PURE__ */ React.createElement("span", { style: { color: "#f59e0b" } }, "TYPE"), "[gEnd]", /* @__PURE__ */ React.createElement("span", { style: { color: "#7c3aed" } }, "SKIN"), "[gEnd]", /* @__PURE__ */ React.createElement("span", { style: { color: "#f59e0b" } }, "PRIMARY"), "[gEnd]", /* @__PURE__ */ React.createElement("span", { style: { color: "#3b82f6" } }, "SECONDARY"), "[gEnd]", /* @__PURE__ */ React.createElement("span", { style: { color: "#e63946" } }, "BLOOD"), "[divEnd]", /* @__PURE__ */ React.createElement("span", { style: { color: "#10b981" } }, "ID[itemEnd]ID[itemEnd]...")), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 9, color: "#444", marginTop: 6, lineHeight: 1.6 } }, "Normal: ", /* @__PURE__ */ React.createElement("span", { style: { color: "#777" } }, '"hmm"'), " | Bot: ", /* @__PURE__ */ React.createElement("span", { style: { color: "#777" } }, '"This is clearly a bot"'), " | Shiny: save as ", /* @__PURE__ */ React.createElement("span", { style: { color: "#f59e0b" } }, "Shiny boi.dw2p"))), /* @__PURE__ */ React.createElement("div", { style: { marginTop: 12 } }, sL("\u{1F4E5} IMPORT PRESET"), /* @__PURE__ */ React.createElement(
+      "textarea",
+      {
+        value: importTxt,
+        onChange: (e) => setImportTxt(e.target.value),
+        placeholder: "Paste preset string here...",
+        rows: 4,
+        style: { width: "100%", background: "#0d0d1a", border: "1px solid #333", borderRadius: 8, color: "#fff", padding: 10, fontSize: 10, fontFamily: "inherit", resize: "vertical" }
+      }
+    ), /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        onClick: () => doImp(),
+        disabled: !importTxt.includes("[gEnd]"),
+        style: { width: "100%", marginTop: 6, background: importTxt.includes("[gEnd]") ? "#ec4899" : "#333", border: "none", borderRadius: 6, color: "#fff", padding: "10px 0", cursor: importTxt.includes("[gEnd]") ? "pointer" : "not-allowed", fontSize: 12, fontWeight: 700, fontFamily: "inherit" }
+      },
+      "\u{1F4E5} IMPORT INTO EDITOR"
+    )))), /* @__PURE__ */ React.createElement("div", { style: { borderTop: "1px solid #1a1a2e", padding: "4px 0", textAlign: "center" } }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 7, color: "#222", letterSpacing: 2 } }, "DW2 PRESET EDITOR V3.0 \u2014 LIGHTING DATA FROM ASSEMBLY-CSHARP + RTSC \u2014 AMACIADOR DE CARNE ENG.")));
+  }
+  ReactDOM.createRoot(document.getElementById("root")).render(/* @__PURE__ */ React.createElement(App, null));
+})();
 
-function genP(s) {
-  return s.st+"[gEnd]"+fmtC(s.sk)+"[gEnd]"+fmtC(s.pr)+"[gEnd]"+fmtC(s.se)+"[gEnd]"+fmtC(s.bl)+"[divEnd]"+s.it.join("[itemEnd]")+(s.it.length?"[itemEnd]":"");
-}
-
-function convertPreset(presetStr, fromMapId, toMapId) {
-  const fromMap = MAPS.find(m=>m.id===fromMapId);
-  const toMap   = MAPS.find(m=>m.id===toMapId);
-  if (!fromMap||!toMap) return null;
-  const p = parseP(presetStr);
-  if (!p) return null;
-  return genP({ st:p.st, sk:p.sk, pr:convertColor(p.pr,fromMap.cat,toMap.cat), se:convertColor(p.se,fromMap.cat,toMap.cat), bl:p.bl, it:p.it });
-}
-
-function detectMap(pr) {
-  const a = (Math.abs(pr[0])+Math.abs(pr[1])+Math.abs(pr[2]))/3;
-  if (a>1e10) return "cage";
-  if (a>3)    return "others";
-  return "streets";
-}
-function detectMapId(pr) {
-  const cat = detectMap(pr);
-  if (cat==="cage")   return "cage";
-  if (cat==="others") return "basket";
-  return "streets";
-}
-
-/* ═══════════════════════════════════════════════════
-   COMPONENTS
-   ═══════════════════════════════════════════════════ */
-
-// Mannequin com design V1 (silhueta SVG simples) + cores V3 (4 slots)
-function Mannequin({sk, pr, se, bl, st}) {
-  const skin = toRgb(sk[0],sk[1],sk[2]);
-  const prim = toRgb(Math.abs(pr[0]),Math.abs(pr[1]),Math.abs(pr[2]));
-  const sec  = toRgb(Math.abs(se[0]),Math.abs(se[1]),Math.abs(se[2]));
-  const bld  = toRgb(Math.abs(bl[0]),Math.abs(bl[1]),Math.abs(bl[2]));
-  const negPr = pr[0]<0||pr[1]<0||pr[2]<0;
-  const isShiny = st==="shiny", isBot=st==="bot";
-  const glow = negPr ? "drop-shadow(0 0 8px "+prim+")" : "none";
-  return (
-    <div style={{position:"relative",width:"100%",height:200,borderRadius:12,overflow:"hidden",border:"2px solid #333",background:"#0d0d1a"}}>
-      <div style={{position:"absolute",inset:0,background:"radial-gradient(ellipse at 50% 80%, #1a1a3a 0%, #08080f 100%)",pointerEvents:"none"}}/>
-      <svg viewBox="0 0 100 200" style={{position:"absolute",inset:0,width:"100%",height:"100%",filter:glow}}>
-        {/* Sombra */}
-        <ellipse cx="50" cy="195" rx="28" ry="5" fill="#000" opacity=".4"/>
-        {/* Cabeça */}
-        <ellipse cx="50" cy="35" rx="18" ry="22" fill={skin} stroke="#222" strokeWidth=".5"/>
-        {/* Olhos */}
-        <circle cx="43" cy="32" r="2.5" fill="#111"/>
-        <circle cx="57" cy="32" r="2.5" fill="#111"/>
-        <circle cx="43.5" cy="31.5" r="1" fill="#eee"/>
-        <circle cx="57.5" cy="31.5" r="1" fill="#eee"/>
-        {/* Corpo/camisa */}
-        <rect x="32" y="55" width="36" height="60" rx="8" fill={prim} stroke="#222" strokeWidth=".5"/>
-        {/* Braços */}
-        <rect x="20" y="58" width="14" height="45" rx="6" fill={skin} stroke="#222" strokeWidth=".5"/>
-        <rect x="66" y="58" width="14" height="45" rx="6" fill={skin} stroke="#222" strokeWidth=".5"/>
-        {/* Mãos */}
-        <ellipse cx="27" cy="106" rx="7" ry="8" fill={skin} stroke="#222" strokeWidth=".5"/>
-        <ellipse cx="73" cy="106" rx="7" ry="8" fill={skin} stroke="#222" strokeWidth=".5"/>
-        {/* Calças */}
-        <path d="M35,112 L35,162 Q43,166 50,163 Q57,166 65,162 L65,112 Z" fill={sec} stroke="#222" strokeWidth=".5"/>
-        {/* Pernas */}
-        <rect x="35" y="112" width="13" height="50" rx="5" fill={sec} stroke="#222" strokeWidth=".5"/>
-        <rect x="52" y="112" width="13" height="50" rx="5" fill={sec} stroke="#222" strokeWidth=".5"/>
-        {/* Sapatos */}
-        <rect x="33" y="158" width="17" height="8" rx="3" fill="#333" stroke="#222" strokeWidth=".5"/>
-        <rect x="50" y="158" width="17" height="8" rx="3" fill="#333" stroke="#222" strokeWidth=".5"/>
-        {/* Badge tipo pele */}
-        {(isShiny||isBot)&&<g>
-          <rect x="8" y="18" width="36" height="13" rx="3" fill={isShiny?"#f59e0b":"#7c3aed"} opacity=".9"/>
-          <text x="26" y="28" textAnchor="middle" fill="#000" fontSize="7" fontWeight="bold" fontFamily="inherit">{isShiny?"SHINY":"BOT"}</text>
-        </g>}
-        {/* Indicador sangue */}
-        <rect x="77" y="18" width="14" height="14" rx="2" fill={bld} stroke="#333" strokeWidth=".5"/>
-        <text x="84" y="42" textAnchor="middle" fill="#555" fontSize="5" fontFamily="inherit">BLD</text>
-      </svg>
-      {/* Swatches */}
-      <div style={{position:"absolute",bottom:8,left:8,display:"flex",gap:6,zIndex:3}}>
-        {[{c:skin,l:"Skin"},{c:prim,l:"Prim"},{c:sec,l:"Sec"},{c:bld,l:"Blood"}].map((x,i)=>(
-          <div key={i} style={{display:"flex",alignItems:"center",gap:2}}>
-            <div style={{width:14,height:14,borderRadius:3,background:x.c,border:"1px solid #555"}}/>
-            <span style={{fontSize:8,color:"#555"}}>{x.l}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function ColorSlider({ label, value, onChange, min=-20, max=1, step=0.001, color }) {
-  return (
-    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
-      <span style={{width:16,height:16,borderRadius:3,background:color,display:"inline-block",border:"1px solid #555",flexShrink:0}}/>
-      <span style={{width:20,fontSize:11,color:"#aaa",fontWeight:700}}>{label}</span>
-      <input type="range" min={min} max={max} step={step} value={isFinite(value)?value:0} onChange={e=>onChange(parseFloat(e.target.value))}
-        style={{flex:1,accentColor:color}} />
-      <input type="number" value={value} step={step} onChange={e=>onChange(parseFloat(e.target.value)||0)}
-        style={{width:80,background:"#1a1a2e",border:"1px solid #333",borderRadius:4,color:"#fff",fontSize:11,padding:"2px 4px",textAlign:"right",fontFamily:"inherit"}}/>
-    </div>
-  );
-}
-
-function RGBAEditor({ label, value, onChange, accent="#7c3aed" }) {
-  const [r,g,b,a] = value;
-  const set = (i,v) => { const n=[...value]; n[i]=v; onChange(n); };
-  const prev = toRgb(r,g,b,Math.abs(a));
-  const neg  = r<0||g<0||b<0;
-  return (
-    <div style={{background:"#0d0d1a",borderRadius:8,padding:10,marginBottom:8,border:"1px solid #222"}}>
-      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-        <div style={{width:28,height:28,borderRadius:6,background:prev,border:"2px solid #444",boxShadow:neg?"0 0 12px "+prev:"none"}}/>
-        <span style={{fontWeight:700,fontSize:13,color:accent}}>{label}</span>
-        {neg&&<span style={{fontSize:10,color:"#ff6b9d",background:"#2a1020",padding:"1px 6px",borderRadius:8}}>NEGATIVO</span>}
-      </div>
-      <ColorSlider label="R" value={r} onChange={v=>set(0,v)} color="#ff4444"/>
-      <ColorSlider label="G" value={g} onChange={v=>set(1,v)} color="#44ff44"/>
-      <ColorSlider label="B" value={b} onChange={v=>set(2,v)} color="#4488ff"/>
-      <ColorSlider label="A" value={a} onChange={v=>set(3,v)} min={-2} max={2} color="#ffffff"/>
-    </div>
-  );
-}
-
-function MapSelector({maps, selected, onSelect, mode}) {
-  return (
-    <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:4}}>
-      {maps.map(m=>(
-        <button key={m.id} onClick={()=>onSelect(m.id)}
-          className={"map-chip"+(selected===m.id?(mode==="from"?" active-from":" active-to"):"")}
-          style={selected===m.id?{borderColor:m.color,color:m.color,background:m.color+"18"}:{}}>
-          <span style={{display:"inline-block",width:6,height:6,borderRadius:"50%",background:m.color,marginRight:4,verticalAlign:"middle"}}/>
-          {m.name}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function ConversionDetails({fromMap, toMap, inputPreset, outputPreset}) {
-  if (!inputPreset||!outputPreset) return null;
-  const pIn  = parseP(inputPreset);
-  const pOut = parseP(outputPreset);
-  if (!pIn||!pOut) return null;
-  const from = MAPS.find(m=>m.id===fromMap);
-  const to   = MAPS.find(m=>m.id===toMap);
-  const isCage = from?.cat==="cage"||to?.cat==="cage";
-  const fmt = v => typeof v==="number"&&isFinite(v)?v.toFixed(3):String(v);
-  return (
-    <div style={{background:"#0d0d1a",border:"1px solid #222",padding:8,marginTop:8,fontSize:9,borderRadius:6}}>
-      <div style={{fontWeight:700,color:"#7c3aed",marginBottom:6,fontSize:10}}>Conversion details</div>
-      <div className="detail-row"><span>Method</span><span style={{color:isCage?"#8b5cf6":"#10b981"}}>{from?.cat===to?.cat?"No change (same group)":isCage?"Logarithmic (Cage HDR)":"Linear (offset ±"+STREETS_OTHERS_OFFSET+")"}</span></div>
-      <div className="detail-row"><span>Prim IN</span><span style={{color:"#f59e0b"}}>[{pIn.pr.map(fmt).join(", ")}]</span></div>
-      <div className="detail-row"><span>Prim OUT</span><span style={{color:"#10b981"}}>[{pOut.pr.map(fmt).join(", ")}]</span></div>
-      <div className="detail-row"><span>Sec IN</span><span style={{color:"#f59e0b"}}>[{pIn.se.map(fmt).join(", ")}]</span></div>
-      <div className="detail-row"><span>Sec OUT</span><span style={{color:"#10b981"}}>[{pOut.se.map(fmt).join(", ")}]</span></div>
-      <div style={{marginTop:6,fontSize:8,color:"#555"}}>
-        <div style={{color:from?.color}}>Source: {from?.desc}</div>
-        <div style={{color:to?.color,marginTop:2}}>Target: {to?.desc}</div>
-      </div>
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════
-   MAIN APP
-   ═══════════════════════════════════════════════════ */
-function App() {
-  const [tab,         setTab]         = useState("colors");
-  const [skinType,    setSkinType]    = useState("normal");
-  const [skinColor,   setSkinColor]   = useState([.787,.667,.529,1]);
-  const [primary,     setPrimary]     = useState([0,0,0,1]);
-  const [secondary,   setSecondary]   = useState([0,0,0,1]);
-  const [blood,       setBlood]       = useState([.909,0,0,1]);
-  const [activeSlot,  setActiveSlot]  = useState("primary");
-  const [items,       setItems]       = useState(["905","2655","16","112","35","63","1855"]);
-  const [itemFilter,  setItemFilter]  = useState("tops");
-  const [manualId,    setManualId]    = useState("");
-  const [importTxt,   setImportTxt]   = useState("");
-  const [copied,      setCopied]      = useState(false);
-
-  // Converter state
-  const [convInput,   setConvInput]   = useState("");
-  const [convFrom,    setConvFrom]    = useState("streets");
-  const [convTo,      setConvTo]      = useState("basket");
-  const [convResult,  setConvResult]  = useState("");
-  const [convCopied,  setConvCopied]  = useState(false);
-  const [convDet,     setConvDet]     = useState("");
-  const [showDetails, setShowDetails] = useState(false);
-
-  const tv = SKIN_TYPES[skinType].tv;
-  const preset = useMemo(()=>genP({st:tv,sk:skinColor,pr:primary,se:secondary,bl:blood,it:items}),[tv,skinColor,primary,secondary,blood,items]);
-
-  const doImp = (txt) => {
-    const s = txt||importTxt;
-    const p = parseP(s);
-    if (!p) return;
-    if (p.st==="This is clearly a bot") setSkinType("bot");
-    else if (p.st==="Shiny boi")        setSkinType("shiny");
-    else                                setSkinType("normal");
-    setSkinColor(p.sk); setPrimary(p.pr); setSecondary(p.se); setBlood(p.bl); setItems(p.it);
-    setImportTxt(""); setTab("colors");
-  };
-
-  const doCopy = (t) => {
-    try { navigator.clipboard.writeText(t||preset); } catch(e) {
-      const a=document.createElement("textarea"); a.value=t||preset;
-      document.body.appendChild(a); a.select(); document.execCommand("copy"); document.body.removeChild(a);
-    }
-    if (!t) { setCopied(true); setTimeout(()=>setCopied(false),2000); }
-  };
-
-  const applyFx = (v) => {
-    if (activeSlot==="primary")   setPrimary([...v]);
-    else if (activeSlot==="secondary") setSecondary([...v]);
-    else if (activeSlot==="blood")     setBlood([...v]);
-    else                               setSkinColor([...v]);
-  };
-
-  const shinyBoi = () => {
-    setSkinType("shiny"); setSkinColor([1,1,1,1]); setPrimary([1,1,1,1]);
-    setSecondary([1,1,1,1]); setBlood([.909,0,0,1]);
-    setItems(["905","2555","35","112","109","38","2","1202"]);
-  };
-
-  const doConv = useCallback(()=>{
-    const result = convertPreset(convInput, convFrom, convTo);
-    if (result) { setConvResult(result); setShowDetails(true); }
-  }, [convInput, convFrom, convTo]);
-
-  const hConvIn = (t) => {
-    setConvInput(t); setConvResult(""); setShowDetails(false);
-    const p = parseP(t);
-    if (p) {
-      const d = detectMap(p.pr);
-      setConvDet(d);
-      const detId = detectMapId(p.pr);
-      setConvFrom(detId);
-      if (d==="streets")      setConvTo("basket");
-      else if (d==="cage")    setConvTo("streets");
-      else                    setConvTo("streets");
-    }
-  };
-
-  const swapMaps = () => {
-    const f=convFrom, t=convTo;
-    setConvFrom(t); setConvTo(f); setConvResult(""); setShowDetails(false);
-  };
-
-  // Slot atual ativo para o editor
-  const slotValue   = activeSlot==="primary"?primary:activeSlot==="secondary"?secondary:activeSlot==="blood"?blood:skinColor;
-  const setSlotValue= activeSlot==="primary"?setPrimary:activeSlot==="secondary"?setSecondary:activeSlot==="blood"?setBlood:setSkinColor;
-  const slotAccent  = activeSlot==="blood"?"#e63946":activeSlot==="primary"?"#f59e0b":activeSlot==="secondary"?"#3b82f6":"#7c3aed";
-  const slotLabel   = activeSlot==="primary"?"Primary Color":activeSlot==="secondary"?"Secondary Color":activeSlot==="blood"?"Blood Color":"Skin Color";
-
-  const fromMapObj = MAPS.find(m=>m.id===convFrom);
-  const toMapObj   = MAPS.find(m=>m.id===convTo);
-  const isCageConv = fromMapObj?.cat==="cage"||toMapObj?.cat==="cage";
-
-  // Button styles (V1 design)
-  const btnStyle = (active, accent="#7c3aed") => ({
-    flex:1, background:active?accent:"#1a1a2e", border:"1px solid "+(active?accent:"#333"),
-    borderRadius:5, color:active?"#fff":"#888", fontSize:10, fontWeight:700,
-    padding:"5px 0", cursor:"pointer", transition:"all 0.15s", fontFamily:"inherit"
-  });
-
-  const tabBtn = (id, label, sub) => (
-    <button key={id} onClick={()=>setTab(id)} style={{
-      flex:1, background:tab===id?"#0d0d1a":"transparent", border:"none",
-      borderBottom:tab===id?"2px solid #7c3aed":"2px solid transparent",
-      color:tab===id?"#fff":"#666", padding:"10px 0", cursor:"pointer", fontSize:11, fontWeight:700, fontFamily:"inherit"
-    }}>
-      {label}
-      <div style={{fontSize:9,color:tab===id?"#7c3aed":"#444",marginTop:1}}>{sub}</div>
-    </button>
-  );
-
-  const sL = t => <div style={{fontSize:9,color:"#666",fontWeight:700,marginBottom:4,marginTop:6,letterSpacing:1}}>{t}</div>;
-
-  return (
-    <div style={{color:"#e0e0e0",minHeight:"100vh"}}>
-
-      {/* ═══ HEADER (V1 design) ═══ */}
-      <div style={{background:"linear-gradient(135deg, #0a0a1a 0%, #1a0a2e 50%, #0a0a1a 100%)",borderBottom:"2px solid #7c3aed",padding:"14px 16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-        <div>
-          <div style={{position:"absolute",top:0,left:0,right:0,height:1,background:"linear-gradient(90deg,transparent,#7c3aed,transparent)"}}/>
-          <h1 style={{fontFamily:"'Orbitron',monospace",fontSize:18,fontWeight:900,margin:0,background:"linear-gradient(90deg, #7c3aed, #ec4899, #f59e0b)",backgroundSize:"200%",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",animation:"slideGlow 3s linear infinite"}}>
-            DW2 PRESET EDITOR
-          </h1>
-        <span style={{fontSize:10,color:"#555",fontWeight:600}}>by Nixagorn • V3</span>
-        </div>
-        <button onClick={shinyBoi} style={{background:"linear-gradient(135deg, #f59e0b, #fcd34d)",border:"none",borderRadius:6,padding:"6px 12px",cursor:"pointer",fontSize:10,fontWeight:700,color:"#000",fontFamily:"inherit"}}>✨ SHINY BOI</button>
-      </div>
-
-      {/* ═══ TIPO DE PELE ═══ */}
-      <div style={{padding:"8px 16px",borderBottom:"1px solid #1a1a2e",display:"flex",gap:4}}>
-        <span style={{fontSize:9,color:"#666",fontWeight:700,alignSelf:"center",marginRight:4}}>SKIN TYPE:</span>
-        {Object.entries(SKIN_TYPES).map(([k,v])=>(
-          <button key={k} onClick={()=>setSkinType(k)} style={btnStyle(skinType===k)}>
-            {v.label}
-          </button>
-        ))}
-      </div>
-
-      {/* ═══ TABS (V1 design) ═══ */}
-      <div style={{display:"flex",borderBottom:"1px solid #1a1a2e"}}>
-        {tabBtn("colors",  "🎨 Colors",    "Skin & Clothes")}
-        {tabBtn("convert", "⇄ Convert",    "Between Maps")}
-        {tabBtn("items",   "👕 Items",     "Clothes & Trails")}
-        {tabBtn("preset",  "📤 Preset",    "Export / Import")}
-      </div>
-
-      {/* ═══ CONTEÚDO ═══ */}
-      <div style={{padding:"12px 16px",animation:"fadeIn 0.2s ease",maxHeight:"70vh",overflowY:"auto"}}>
-
-        {/* ══════════════════════════
-            ABA: CORES (V3 logic + V1 design)
-            ══════════════════════════ */}
-        {tab==="colors"&&<div>
-          <Mannequin sk={skinColor} pr={primary} se={secondary} bl={blood} st={skinType}/>
-
-          {/* Slot selector */}
-          <div style={{marginTop:10}}>
-            {sL("ACTIVE SLOT")}
-            <div style={{display:"flex",gap:3}}>
-              {[{id:"skinColor",l:"Skin",a:"#7c3aed"},{id:"primary",l:"Primary",a:"#f59e0b"},{id:"secondary",l:"Secondary",a:"#3b82f6"},{id:"blood",l:"Blood",a:"#e63946"}].map(s=>(
-                <button key={s.id} onClick={()=>setActiveSlot(s.id)} style={{...btnStyle(activeSlot===s.id,s.a),fontSize:9}}>{s.l}</button>
-              ))}
-            </div>
-          </div>
-
-          {/* Color wheel (só para pele) */}
-          {activeSlot==="skinColor"&&<div>
-            {sL("🎨 BASE COLOR")}
-            <div style={{display:"grid",gridTemplateColumns:"repeat(4, 1fr)",gap:4,marginBottom:10}}>
-              {COLOR_WHEEL.map((c,i)=>(
-                <button key={i} onClick={()=>setSkinColor([...c.rgb,1])} title={c.name} style={{
-                  background:"rgb("+c.rgb.map(v=>Math.round(v*255)).join(",")+")",
-                  border:"2px solid #333",borderRadius:6,height:28,cursor:"pointer",
-                  color:c.rgb[0]+c.rgb[1]>1.2?"#000":"#fff",fontSize:8,fontWeight:700,fontFamily:"inherit"
-                }}>{c.name}</button>
-              ))}
-            </div>
-          </div>}
-
-          {/* Effect presets (só para primária/secundária/sangue) */}
-          {activeSlot!=="skinColor"&&<div>
-            {sL("⚡ QUICK PRESETS")}
-            <div style={{display:"grid",gridTemplateColumns:"repeat(4, 1fr)",gap:3,marginBottom:8}}>
-              {EFFECTS.map((e,i)=>(
-                <button key={i} onClick={()=>applyFx(e.v)} style={{background:"#1a1a2e",border:"1px solid #333",borderRadius:6,padding:"5px 2px",cursor:"pointer",color:"#ccc",fontSize:9,fontWeight:600,fontFamily:"inherit"}}
-                  onMouseEnter={ev=>{ev.target.style.borderColor="#7c3aed";ev.target.style.color="#fff"}}
-                  onMouseLeave={ev=>{ev.target.style.borderColor="#333";ev.target.style.color="#ccc"}}>
-                  {e.n}
-                </button>
-              ))}
-            </div>
-          </div>}
-
-          <RGBAEditor label={slotLabel} value={slotValue} onChange={setSlotValue} accent={slotAccent}/>
-        </div>}
-
-        {/* ══════════════════════════
-            ABA: CONVERTER (V3 logic + V1 design)
-            ══════════════════════════ */}
-        {tab==="convert"&&<div>
-          <div style={{background:"#0a1a0a",border:"1px solid #1a3a1a",padding:8,marginBottom:10,fontSize:9,color:"#4a8",lineHeight:1.6,borderRadius:6}}>
-            ◆ Conversion based on real source data (Assembly-CSharp + .rtsc). Streets uses DayNightCycle. Cage uses logarithmic scale (log10).
-          </div>
-
-          {sL("PASTE YOUR PRESET")}
-          <textarea value={convInput} onChange={e=>hConvIn(e.target.value)} placeholder="Paste the full .dw2p preset string..." rows={3}
-            style={{width:"100%",background:"#0d0d1a",border:"1px solid #333",color:"#ddd",padding:8,fontSize:9,resize:"vertical",borderRadius:6,marginBottom:4}}/>
-
-          {convDet&&<div style={{fontSize:9,padding:"4px 8px",background:convDet==="cage"?"#1a0a1a":"#1a1a0a",border:"1px solid "+(convDet==="cage"?"#8b5cf6":"#333"),color:convDet==="cage"?"#c4b5fd":"#f59e0b",display:"flex",alignItems:"center",gap:6,borderRadius:6,marginBottom:4}}>
-            <span style={{width:8,height:8,borderRadius:"50%",background:convDet==="cage"?"#8b5cf6":convDet==="streets"?"#f59e0b":"#3b82f6"}}/>
-            Detected: <strong>{convDet==="streets"?"Streets":convDet==="cage"?"Cage":"Others (Basketball/Bouncy/Pole/Pub)"}</strong>
-          </div>}
-
-          {sL("FROM (CURRENT MAP)")}
-          <MapSelector maps={MAPS} selected={convFrom} onSelect={id=>{setConvFrom(id);setConvResult("");setShowDetails(false)}} mode="from"/>
-
-          <div className="conv-arrow" style={{cursor:"pointer"}} onClick={swapMaps}>
-            <span style={{background:"#08080f",padding:"0 12px",position:"relative",zIndex:1}}>⇅ SWAP</span>
-          </div>
-
-          {sL("TO (TARGET MAP)")}
-          <MapSelector maps={MAPS} selected={convTo} onSelect={id=>{setConvTo(id);setConvResult("");setShowDetails(false)}} mode="to"/>
-
-          {isCageConv&&<div className="cage-warn">
-            ⚠ Cage conversion uses logarithmic scale (log10). Extreme values (1e37+) are normalized. Result may need fine-tuning in-game.
-          </div>}
-
-          {convFrom&&convTo&&convFrom!==convTo&&(
-            <div style={{marginTop:6,padding:"5px 8px",background:"#0d0d1a",border:"1px solid #1a1a2e",fontSize:8,color:"#444",display:"flex",justifyContent:"space-between",borderRadius:4}}>
-              <span>{fromMapObj?.cat===toMapObj?.cat?"Same group — no change":isCageConv?"Cage ↔ "+(fromMapObj?.cat==="cage"?toMapObj?.name:fromMapObj?.name)+" (log10)":"Offset: "+(fromMapObj?.cat==="streets"?"-":"+")+"2.0 on RGB channels"}</span>
-              <span style={{color:fromMapObj?.color}}>{fromMapObj?.name}</span>
-              <span>→</span>
-              <span style={{color:toMapObj?.color}}>{toMapObj?.name}</span>
-            </div>
-          )}
-
-          <button onClick={doConv} disabled={!convInput.includes("[gEnd]")||convFrom===convTo}
-            style={{width:"100%",marginTop:10,
-              background:!convInput.includes("[gEnd]")||convFrom===convTo?"#1a1a2e":isCageConv?"linear-gradient(135deg,#7c3aed,#8b5cf6)":"linear-gradient(135deg, #7c3aed, #ec4899)",
-              border:"none",color:"#fff",padding:"12px 0",borderRadius:6,
-              cursor:!convInput.includes("[gEnd]")||convFrom===convTo?"not-allowed":"pointer",
-              fontFamily:"'Orbitron',monospace",fontSize:14,fontWeight:700,letterSpacing:2}}>
-            {convFrom===convTo?"— SAME MAP":isCageConv?"⚡ CONVERT (CAGE)":"⇄ CONVERT"}
-          </button>
-
-          {convResult&&<div style={{marginTop:10}}>
-            {sL("RESULT")}
-            <div style={{background:"#0d0d1a",border:"1px solid #1a3a1a",padding:8,fontSize:9,color:"#4a8",wordBreak:"break-all",lineHeight:1.5,maxHeight:80,overflowY:"auto",fontFamily:"inherit",borderRadius:6}}>{convResult}</div>
-            <div style={{display:"flex",gap:4,marginTop:6}}>
-              <button onClick={()=>{doCopy(convResult);setConvCopied(true);setTimeout(()=>setConvCopied(false),2000)}}
-                style={{flex:1,background:convCopied?"#10b981":"linear-gradient(135deg,#7c3aed,#ec4899)",border:"none",color:"#fff",padding:"8px 0",cursor:"pointer",borderRadius:6,fontFamily:"inherit",fontWeight:700,fontSize:11}}>
-                {convCopied?"✅ COPIED":"📋 COPY"}
-              </button>
-              <button onClick={()=>doImp(convResult)}
-                style={{flex:1,background:"#1a1a2e",border:"1px solid #7c3aed",color:"#7c3aed",padding:"8px 0",cursor:"pointer",borderRadius:6,fontFamily:"inherit",fontWeight:700,fontSize:11}}>
-                ▶ EDIT
-              </button>
-              <button onClick={()=>setShowDetails(!showDetails)}
-                style={{width:40,background:"#1a1a2e",border:"1px solid #333",color:showDetails?"#fff":"#555",padding:"8px 0",cursor:"pointer",borderRadius:6,fontFamily:"inherit",fontSize:11}}>
-                {showDetails?"▲":"▼"}
-              </button>
-            </div>
-            {showDetails&&<ConversionDetails fromMap={convFrom} toMap={convTo} inputPreset={convInput} outputPreset={convResult}/>}
-          </div>}
-
-          {/* Referência */}
-          <div style={{marginTop:14,background:"#0d0d1a",border:"1px solid #1a1a2e",padding:8,borderRadius:6}}>
-            {sL("LIGHTING REFERENCE")}
-            {[{m:MAPS[0],bar:"linear-gradient(90deg,#5c5c5c,#b8b8b8)"},{m:MAPS[1],bar:"linear-gradient(90deg,#1a3a6a,#3b82f6)"},{m:MAPS[5],bar:"linear-gradient(90deg,#2a1a4a,#8b5cf6,#c4b5fd)"}].map(({m,bar},i)=>(
-              <div key={i} style={{display:"flex",alignItems:"center",gap:6,marginBottom:4}}>
-                <span style={{width:8,height:8,borderRadius:"50%",background:m.color,flexShrink:0}}/>
-                <span style={{color:"#777",width:65,fontSize:8}}>{m.name}</span>
-                <span style={{fontSize:8,color:"#444",flex:1}}>{m.desc}</span>
-                <div className="lighting-bar" style={{width:40,background:bar}}/>
-              </div>
-            ))}
-          </div>
-        </div>}
-
-        {/* ══════════════════════════
-            ABA: ITENS (V3 items database + V1 design)
-            ══════════════════════════ */}
-        {tab==="items"&&<div>
-          {sL("📦 EQUIPPED ("+items.length+")")}
-          <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:8}}>
-            {items.map((id,i)=>(
-              <div key={i} style={{background:"#1a1040",border:"1px solid #7c3aed",borderRadius:5,padding:"3px 8px",fontSize:10,color:"#ccc",display:"flex",alignItems:"center",gap:4}}>
-                <span>#{id}</span>
-                <button onClick={()=>setItems(p=>p.filter((_,x)=>x!==i))} style={{background:"none",border:"none",color:"#ff4444",cursor:"pointer",fontSize:12,padding:0,lineHeight:1}}>×</button>
-              </div>
-            ))}
-          </div>
-
-          <div style={{display:"flex",gap:4,marginBottom:12}}>
-            <input type="number" placeholder="Item ID..." value={manualId} onChange={e=>setManualId(e.target.value)}
-              style={{flex:1,background:"#0d0d1a",border:"1px solid #333",borderRadius:5,color:"#fff",padding:"4px 8px",fontSize:11,fontFamily:"inherit"}}/>
-            <button onClick={()=>{if(manualId){setItems(p=>[...p,manualId]);setManualId("");}}}
-              style={{background:"#7c3aed",border:"none",borderRadius:5,color:"#fff",padding:"4px 12px",cursor:"pointer",fontSize:11,fontWeight:700,fontFamily:"inherit"}}>+ ADD</button>
-          </div>
-
-          {sL("FILTER CATEGORY")}
-          <div style={{display:"flex",gap:3,marginBottom:8,flexWrap:"wrap"}}>
-            {Object.entries(ITEMS).map(([k,v])=>(
-              <button key={k} onClick={()=>setItemFilter(k)} style={{...btnStyle(itemFilter===k),flex:"none",padding:"4px 7px",fontSize:9}}>
-                {v.icon} {v.name}
-              </button>
-            ))}
-          </div>
-
-          <div style={{display:"grid",gridTemplateColumns:"repeat(3, 1fr)",gap:5}}>
-            {ITEMS[itemFilter]?.items.map((it,i)=>(
-              <div key={i} style={{background:"#111",border:"1px solid #1a1a2e",borderRadius:6,padding:"7px 6px",fontSize:10,color:"#888"}}>
-                <div style={{fontWeight:700,color:"#ccc"}}>{it.name}</div>
-                <div style={{fontSize:8,color:"#444",marginTop:2}}>ID: pending</div>
-              </div>
-            ))}
-          </div>
-        </div>}
-
-        {/* ══════════════════════════
-            ABA: PRESET (V3 logic + V1 design)
-            ══════════════════════════ */}
-        {tab==="preset"&&<div>
-          {sL("📋 GENERATED PRESET")}
-          <div style={{background:"#0d0d1a",border:"1px solid #333",borderRadius:8,padding:10,fontSize:10,color:"#8bc34a",wordBreak:"break-all",lineHeight:1.5,maxHeight:120,overflowY:"auto",fontFamily:"inherit"}}>{preset}</div>
-          <button onClick={()=>doCopy()} style={{width:"100%",marginTop:8,background:copied?"#10b981":"linear-gradient(135deg, #7c3aed, #ec4899)",border:"none",borderRadius:6,color:"#fff",padding:"10px 0",cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:"'Orbitron',monospace",letterSpacing:2}}>
-            {copied?"✅ COPIED!":"📋 COPY PRESET"}
-          </button>
-
-          {/* Download */}
-          <div style={{background:"#1a1020",border:"1px solid #333",borderRadius:8,padding:10,marginTop:10}}>
-            {sL("⬇ DOWNLOAD AS .DW2P")}
-            <div style={{display:"flex",gap:4}}>
-              <input id="fnInput" type="text" placeholder="preset name..." defaultValue="my_preset"
-                style={{flex:1,background:"#0d0d1a",border:"1px solid #333",borderRadius:5,color:"#fff",padding:"4px 8px",fontSize:10,fontFamily:"inherit"}}/>
-              <button onClick={()=>{
-                const fn = document.getElementById("fnInput").value||"preset";
-                const ext = skinType==="shiny"?"Shiny boi":fn;
-                const blob = new Blob([preset],{type:"text/plain"});
-                const a = document.createElement("a");
-                a.href = URL.createObjectURL(blob); a.download = ext+".dw2p"; a.click();
-              }} style={{background:"linear-gradient(135deg,#7c3aed,#ec4899)",border:"none",borderRadius:5,color:"#fff",padding:"4px 12px",cursor:"pointer",fontSize:11,fontWeight:700,fontFamily:"inherit"}}>
-                ⬇ .DW2P
-              </button>
-            </div>
-            {skinType==="shiny"&&<div style={{fontSize:8,color:"#f59e0b",marginTop:4}}>Shiny detected — file will be saved as "Shiny boi.dw2p"</div>}
-            <div style={{marginTop:8,background:"#0d0d1a",border:"1px solid #1a1a2e",borderRadius:6,padding:"6px 8px"}}>
-              <div style={{fontSize:8,color:"#555",marginBottom:3,fontWeight:700}}>📁 WHERE TO PLACE THE FILE</div>
-              <div style={{fontSize:8,color:"#444",lineHeight:1.7}}>
-                <span style={{color:"#7c3aed"}}>Steam (default):</span><br/>
-                <span style={{color:"#666",fontFamily:"inherit"}}>…\Steam\steamapps\common\Drunken Wrestlers 2\Files\presets</span>
-              </div>
-              <button onClick={()=>{
-                try{navigator.clipboard.writeText("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Drunken Wrestlers 2\\Files\\presets");}catch(e){}
-              }} style={{marginTop:5,background:"#1a1a2e",border:"1px solid #333",borderRadius:4,color:"#888",padding:"3px 8px",cursor:"pointer",fontSize:8,fontFamily:"inherit",width:"100%"}}>
-                📋 Copy path
-              </button>
-            </div>
-          </div>
-
-          {/* Format */}
-          <div style={{background:"#0d0d1a",border:"1px solid #222",borderRadius:8,padding:10,marginTop:8}}>
-            {sL("📖 .DW2P FORMAT STRUCTURE")}
-            <div style={{fontSize:9,color:"#555",lineHeight:1.8,fontFamily:"inherit"}}>
-              <span style={{color:"#f59e0b"}}>TYPE</span>[gEnd]<span style={{color:"#7c3aed"}}>SKIN</span>[gEnd]<span style={{color:"#f59e0b"}}>PRIMARY</span>[gEnd]<span style={{color:"#3b82f6"}}>SECONDARY</span>[gEnd]<span style={{color:"#e63946"}}>BLOOD</span>[divEnd]<span style={{color:"#10b981"}}>ID[itemEnd]ID[itemEnd]...</span>
-            </div>
-            <div style={{fontSize:9,color:"#444",marginTop:6,lineHeight:1.6}}>
-              Normal: <span style={{color:"#777"}}>"hmm"</span> | Bot: <span style={{color:"#777"}}>"This is clearly a bot"</span> | Shiny: save as <span style={{color:"#f59e0b"}}>Shiny boi.dw2p</span>
-            </div>
-          </div>
-
-          {/* Import */}
-          <div style={{marginTop:12}}>
-            {sL("📥 IMPORT PRESET")}
-            <textarea value={importTxt} onChange={e=>setImportTxt(e.target.value)} placeholder="Paste preset string here..." rows={4}
-              style={{width:"100%",background:"#0d0d1a",border:"1px solid #333",borderRadius:8,color:"#fff",padding:10,fontSize:10,fontFamily:"inherit",resize:"vertical"}}/>
-            <button onClick={()=>doImp()} disabled={!importTxt.includes("[gEnd]")}
-              style={{width:"100%",marginTop:6,background:importTxt.includes("[gEnd]")?"#ec4899":"#333",border:"none",borderRadius:6,color:"#fff",padding:"10px 0",cursor:importTxt.includes("[gEnd]")?"pointer":"not-allowed",fontSize:12,fontWeight:700,fontFamily:"inherit"}}>
-              📥 IMPORT INTO EDITOR
-            </button>
-          </div>
-        </div>}
-
-      </div>
-
-      {/* Footer */}
-      <div style={{borderTop:"1px solid #1a1a2e",padding:"4px 0",textAlign:"center"}}>
-        <span style={{fontSize:7,color:"#222",letterSpacing:2}}>
-          DW2 PRESET EDITOR V3.0 — LIGHTING DATA FROM ASSEMBLY-CSHARP + RTSC — AMACIADOR DE CARNE ENG.
-        </span>
-      </div>
-    </div>
-  );
-}
-
-ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 </script>
 </body>
 </html>
