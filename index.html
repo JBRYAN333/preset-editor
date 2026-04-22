@@ -97,13 +97,51 @@ textarea { font-family: 'JetBrains Mono', monospace; }
 
   // ── Data ──
   const ITEMS = {
-    tops: { name: "Tops", icon: "\u{1F455}", items: [{ name: "Bandage" }, { name: "Blazer" }, { name: "Cape" }, { name: "DressShirt" }, { name: "DressShirtTucked" }, { name: "FlannelShirt" }, { name: "Hoodie" }, { name: "MA-1" }, { name: "Murica" }, { name: "NoYankee" }, { name: "Polo" }, { name: "RaglanShirt" }, { name: "SailorShirt" }, { name: "SailorShirtTie" }, { name: "SantaCoat" }, { name: "Shirt" }, { name: "ShortSleeve" }, { name: "ShortSleeveFlannel" }, { name: "StripedSweater" }, { name: "Sweatshirt" }, { name: "T-Shirt" }, { name: "TrackTop" }, { name: "Trench" }, { name: "Turtleneck" }, { name: "SingletTop" }, { name: "ElfTop" }] },
-    bottoms: { name: "Bottoms", icon: "\u{1F456}", items: [{ name: "Boxing shorts" }, { name: "Chinos" }, { name: "DressPants" }, { name: "ElfPants" }, { name: "Joggers" }, { name: "PleatedSkirt" }, { name: "Shorts" }, { name: "SantaPants" }, { name: "Skinny" }, { name: "SkinnyBeige" }, { name: "SkinnyBlack" }, { name: "SkinnyLight" }, { name: "SkinnyWhite" }, { name: "TracksuitPants" }, { name: "SingletBottom" }] },
-    shoes: { name: "Footwear", icon: "\u{1F45F}", items: [{ name: "AirForce1" }, { name: "Boots" }, { name: "Chelsea" }, { name: "Gumshoes" }, { name: "LowTopSneakers" }, { name: "RubberSandals" }, { name: "Slides" }, { name: "Slip-ons" }, { name: "Sneakers" }] },
-    headwear: { name: "Headwear", icon: "\u{1F3A9}", items: [{ name: "Balaclava" }, { name: "Bandana" }, { name: "Beanie" }, { name: "Beret" }, { name: "BoxingHelmet" }, { name: "BucketHat" }, { name: "BunnyEars" }, { name: "Cap" }, { name: "Chin Strap" }, { name: "DuckEyes" }, { name: "ElfHat" }, { name: "Eyepatch" }, { name: "FlatCap" }, { name: "HardHat" }, { name: "Hat" }, { name: "Headband" }, { name: "HeartGlasses" }, { name: "HockeyMask" }, { name: "Mohawk" }, { name: "MouthFaceMask" }, { name: "PirateHat" }, { name: "PixelatedShades" }, { name: "PlayerHeadphones" }, { name: "PorkPie" }, { name: "PropellerCap" }, { name: "PumpkinHead" }, { name: "RectangleGlasses" }, { name: "RoundGlasses" }, { name: "SantaHat" }, { name: "Snapback" }, { name: "SnapbackFlat" }, { name: "SpikyHair" }, { name: "TurkeyHat" }, { name: "VikingHelmet" }, { name: "WitchHat" }] },
-    accessories: { name: "Accessories", icon: "\u{1F48E}", items: [{ name: "BakedTurkey" }, { name: "BirthdayCake" }, { name: "Cassette" }, { name: "CassettePlayer" }, { name: "Ducko" }, { name: "Goatee" }, { name: "GoldenChain" }, { name: "Mushache" }, { name: "SantaBeard" }, { name: "Shroom" }, { name: "SilverChain" }, { name: "StripedTie" }, { name: "Tie" }] },
-    trails: { name: "Trails", icon: "\u2728", items: [{ name: "Wood Trail" }, { name: "Stone Trail" }, { name: "Iron Trail" }, { name: "Bronze Trail" }, { name: "Silver Trail" }, { name: "Gold Trail" }, { name: "Platinum Trail" }, { name: "Diamond Trail" }, { name: "Champion Trail" }, { name: "ElectricHands" }, { name: "Fire" }, { name: "Floating Hearts" }, { name: "MenacingEffect" }, { name: "Snowflakes" }, { name: "VampireAura" }] },
-    wrestlers: { name: "Wrestlers", icon: "\u{1F93C}", items: [{ name: "Alex" }, { name: "Bill" }, { name: "Daniel" }, { name: "Hannes" }, { name: "Isaac" }, { name: "James" }, { name: "John" }, { name: "Joseph" }, { name: "Kurt's" }, { name: "Lucy" }, { name: "Peter" }, { name: "Robbie" }, { name: "SkutteOleg2016" }, { name: "Waddle" }, { name: "Will" }] }
+    custom: { name: "Custom RGB", icon: "\uD83D\uDFE3", desc: "Silhueta roxa \u2014 RGB completo", items: [
+      { name: "Chinos", id: "57", cat: "Pants" },
+      { name: "Dress Pants", id: "123", cat: "Pants" },
+      { name: "Dress Shirt", id: "125", cat: "Shirt" },
+      { name: "Dress Shirt Tucked", id: "128", cat: "Shirt" },
+      { name: "Flannel Shirt", id: "124", cat: "Shirt" },
+      { name: "High Top Sneakers", id: "107", cat: "Shoes" },
+      { name: "Kicks", id: "80", cat: "Shoes" },
+      { name: "Pleated Skirt", id: "110", cat: "Garment" },
+      { name: "Short Sleeve Flannel Shirt", id: "126", cat: "Shirt" },
+      { name: "Short Sleeve Shirt", id: "127", cat: "Shirt" },
+      { name: "Snapback Hat (Beige)", id: "116", cat: "Hat" },
+      { name: "Snapback Hat", id: "117", cat: "Hat" },
+      { name: "Suit Jacket", id: "119", cat: "Jacket" },
+      { name: "Track Pants", id: "112", cat: "Pants" },
+      { name: "Track Top", id: "113", cat: "Jacket" },
+      { name: "Unbuttoned Trench Coat", id: "58", cat: "Coat" }
+    ]},
+    general: { name: "General RGB", icon: "\uD83D\uDD35", desc: "Paleta geral \u2014 tamb\xe9m aceitam RGB", items: [
+      { name: "Alex", id: "38", cat: "Hairstyle" },
+      { name: "Balaclava", id: "21", cat: "Mask" },
+      { name: "Beanie", id: "18", cat: "Hat" },
+      { name: "Beret", id: "32", cat: "Hat" },
+      { name: "Boxing Helmet", id: "31", cat: "Hat" },
+      { name: "Boxing Shorts", id: "45", cat: "Shorts" },
+      { name: "Bucket Hat", id: "61", cat: "Hat" },
+      { name: "Cap", id: "6", cat: "Hat" },
+      { name: "Chad", id: "118", cat: "Hairstyle" },
+      { name: "Chinos", id: "44", cat: "Pants" },
+      { name: "Clout Goggles", id: "62", cat: "Glasses" },
+      { name: "Hoodie", id: "19", cat: "Garment" },
+      { name: "Joggers", id: "64", cat: "Pants" },
+      { name: "Mouth Face Mask", id: "23", cat: "Mask" },
+      { name: "Oleg 2016", id: "1", cat: "Hairstyle" },
+      { name: "Polo", id: "26", cat: "Shirt" },
+      { name: "Rubber Sandals", id: "108", cat: "Shoes" },
+      { name: "Singlet Bottom", id: "30", cat: "Garment" },
+      { name: "Singlet Top", id: "29", cat: "Garment" },
+      { name: "Slides", id: "25", cat: "Shoes" },
+      { name: "Slip-ons", id: "16", cat: "Shoes" },
+      { name: "Sweatshirt", id: "19", cat: "Garment" },
+      { name: "T-Shirt", id: "14", cat: "Shirt" },
+      { name: "Turtleneck", id: "63", cat: "Garment" },
+      { name: "Will", id: "50", cat: "Hairstyle" }
+    ]}
   };
   const SKIN_TYPES = {
     normal: { label: "Normal", tv: "hmm" },
@@ -499,7 +537,7 @@ textarea { font-family: 'JetBrains Mono', monospace; }
     const [syncActive, setSyncActive] = useState(false);
     const [syncPair, setSyncPair] = useState("skin-primary");
     const [items, setItems] = useState(["905", "2655", "16", "112", "35", "63", "1855"]);
-    const [itemFilter, setItemFilter] = useState("tops");
+    const [itemFilter, setItemFilter] = useState("custom");
     const [manualId, setManualId] = useState("");
     const [importTxt, setImportTxt] = useState("");
     const [copied, setCopied] = useState(false);
@@ -713,19 +751,50 @@ textarea { font-family: 'JetBrains Mono', monospace; }
               React.createElement("button", { onClick: () => setItems((p) => p.filter((_, x) => x !== i)), style: { background: "none", border: "none", color: "#ff4444", cursor: "pointer", fontSize: 12, padding: 0, lineHeight: 1 } }, "\xD7")
             ))
           ),
-          React.createElement("div", { style: { display: "flex", gap: 4, marginBottom: 12 } },
-            React.createElement("input", { type: "number", placeholder: "Item ID...", value: manualId, onChange: (e) => setManualId(e.target.value), style: { flex: 1, background: "#0d0d1a", border: "1px solid #333", borderRadius: 5, color: "#fff", padding: "4px 8px", fontSize: 11, fontFamily: "inherit" } }),
+          React.createElement("div", { style: { display: "flex", gap: 4, marginBottom: 8 } },
+            React.createElement("input", { type: "number", placeholder: "Item ID manual...", value: manualId, onChange: (e) => setManualId(e.target.value), style: { flex: 1, background: "#0d0d1a", border: "1px solid #333", borderRadius: 5, color: "#fff", padding: "4px 8px", fontSize: 11, fontFamily: "inherit" } }),
             React.createElement("button", { onClick: () => { if (manualId) { setItems((p) => [...p, manualId]); setManualId(""); } }, style: { background: "#7c3aed", border: "none", borderRadius: 5, color: "#fff", padding: "4px 12px", cursor: "pointer", fontSize: 11, fontWeight: 700, fontFamily: "inherit" } }, "+ ADD")
+          ),
+          React.createElement("div", { style: { background: "#0d0d1a", border: "1px solid #1a1a2e", borderRadius: 6, padding: "6px 8px", marginBottom: 8, fontSize: 8, color: "#555" } },
+            "\u26A0 List sourced from real game prefabs (DW2_Unity). Only items with confirmed RGB support. Click to equip."
           ),
           sL("FILTER CATEGORY"),
           React.createElement("div", { style: { display: "flex", gap: 3, marginBottom: 8, flexWrap: "wrap" } },
-            Object.entries(ITEMS).map(([k, v]) => React.createElement("button", { key: k, onClick: () => setItemFilter(k), style: { ...btnStyle(itemFilter === k), flex: "none", padding: "4px 7px", fontSize: 9 } }, v.icon + " " + v.name))
-          ),
-          React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 5 } },
-            ITEMS[itemFilter]?.items.map((it, i) => React.createElement("div", { key: i, style: { background: "#111", border: "1px solid #1a1a2e", borderRadius: 6, padding: "7px 6px", fontSize: 10, color: "#888" } },
-              React.createElement("div", { style: { fontWeight: 700, color: "#ccc" } }, it.name),
-              React.createElement("div", { style: { fontSize: 8, color: "#444", marginTop: 2 } }, "ID: pending")
+            Object.entries(ITEMS).map(([k, v]) => React.createElement("button", { key: k, onClick: () => setItemFilter(k), style: { ...btnStyle(itemFilter === k, k === "custom" ? "#8b5cf6" : "#3b82f6"), flex: "none", padding: "4px 7px", fontSize: 9 } },
+              React.createElement("span", { style: { marginRight: 3 } }, v.icon),
+              v.name,
+              React.createElement("span", { style: { marginLeft: 4, opacity: 0.6 } }, "(" + v.items.length + ")")
             ))
+          ),
+          ITEMS[itemFilter] && React.createElement("div", null,
+            React.createElement("div", { style: { fontSize: 8, color: itemFilter === "custom" ? "#8b5cf6" : "#3b82f6", marginBottom: 6, padding: "4px 6px", background: itemFilter === "custom" ? "#1a0a2a" : "#0a1020", borderRadius: 4, border: "1px solid " + (itemFilter === "custom" ? "#8b5cf620" : "#3b82f620") } },
+              ITEMS[itemFilter].desc
+            ),
+            React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 4 } },
+              ITEMS[itemFilter].items.map((it, i) => {
+                const equipped = items.includes(it.id);
+                return React.createElement("button", {
+                  key: i,
+                  onClick: () => {
+                    if (equipped) setItems((p) => p.filter((x) => x !== it.id));
+                    else setItems((p) => [...p, it.id]);
+                  },
+                  style: {
+                    background: equipped ? (itemFilter === "custom" ? "#1a0a2a" : "#0a1020") : "#0d0d1a",
+                    border: "1px solid " + (equipped ? (itemFilter === "custom" ? "#8b5cf6" : "#3b82f6") : "#1a1a2e"),
+                    borderRadius: 6, padding: "6px 8px", cursor: "pointer", textAlign: "left",
+                    display: "flex", justifyContent: "space-between", alignItems: "center",
+                    fontFamily: "inherit", transition: "all .15s"
+                  }
+                },
+                  React.createElement("div", null,
+                    React.createElement("div", { style: { fontSize: 10, fontWeight: 700, color: equipped ? "#fff" : "#aaa" } }, it.name),
+                    React.createElement("div", { style: { fontSize: 8, color: "#555", marginTop: 1 } }, it.cat + " \u2022 ID: " + it.id)
+                  ),
+                  equipped && React.createElement("span", { style: { fontSize: 10, color: itemFilter === "custom" ? "#8b5cf6" : "#3b82f6", fontWeight: 700 } }, "\u2713")
+                );
+              })
+            )
           )
         ),
 
